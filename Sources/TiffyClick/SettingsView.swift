@@ -303,9 +303,16 @@ private struct AboutSettingsTab: View {
         VStack(spacing: 14) {
             Spacer().frame(height: 6)
 
-            Image(systemName: "computermouse.fill")
-                .font(.system(size: 46))
-                .foregroundStyle(.linearGradient(colors: [.cyan, .blue], startPoint: .topLeading, endPoint: .bottomTrailing))
+            if let icon = NSApp.applicationIconImage {
+                Image(nsImage: icon)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: 72, height: 72)
+            } else {
+                Image(systemName: "computermouse.fill")
+                    .font(.system(size: 46))
+                    .foregroundStyle(.linearGradient(colors: [.cyan, .blue], startPoint: .topLeading, endPoint: .bottomTrailing))
+            }
 
             VStack(spacing: 4) {
                 Text("tiffy-click")
