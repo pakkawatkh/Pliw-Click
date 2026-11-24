@@ -46,9 +46,9 @@ cat << 'EOF' > "${CONTENTS_DIR}/Info.plist"
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.3</string>
+    <string>1.0.4</string>
     <key>CFBundleVersion</key>
-    <string>1.0.3</string>
+    <string>1.0.4</string>
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
     <key>LSUIElement</key>
@@ -63,11 +63,26 @@ EOF
 
 echo "🔏 Code signing tiffy-click.app with stable certificate..."
 SIGN_CERT="MonkeyToolsDeveloper"
-if security find-certificate -c "${SIGN_CERT}" ~/Library/Keychains/login.keychain-db >/dev/null 2>&1; then
-    codesign --force --deep --sign "${SIGN_CERT}" "${APP_DIR}" || codesign --force --deep --sign - "${APP_DIR}"
-else
-    codesign --force --deep --sign - "${APP_DIR}"
+if ! security find-certificate -c "${SIGN_CERT}" ~/Library/Keychains/login.keychain-db >/dev/null 2>&1; then
+    if security find-certificate -c "MonkeyCopyDeveloper" ~/Library/Keychains/login.keychain-db >/dev/null 2>&1; then
+        SIGN_CERT="MonkeyCopyDeveloper"
+    else
+        echo "Creating persistent local developer certificate for stable macOS TCC permissions..."
+        TMP_CERT_DIR=$(mktemp -d)
+        openssl req -x509 -newkey rsa:2048 -days 3650 \
+          -keyout "${TMP_CERT_DIR}/dev.key" -out "${TMP_CERT_DIR}/dev.crt" -nodes \
+          -subj "/CN=MonkeyToolsDeveloper" \
+          -addext "keyUsage=critical,digitalSignature" \
+          -addext "extendedKeyUsage=codeSigning"
+        openssl pkcs12 -export \
+          -in "${TMP_CERT_DIR}/dev.crt" -inkey "${TMP_CERT_DIR}/dev.key" \
+          -out "${TMP_CERT_DIR}/dev.p12" -password pass:monkeytools
+        security import "${TMP_CERT_DIR}/dev.p12" -k ~/Library/Keychains/login.keychain-db -P monkeytools -T /usr/bin/codesign || true
+        rm -rf "${TMP_CERT_DIR}"
+    fi
 fi
+
+codesign --force --deep --sign "${SIGN_CERT}" "${APP_DIR}" || codesign --force --deep --sign - "${APP_DIR}"
 
 echo "✅ Successfully built: ${APP_DIR}"
 
