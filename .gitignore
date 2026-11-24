@@ -1,0 +1,8 @@
+.build/
+.build_dmg/
+.DS_Store
+*.app
+*.dmg
+*.zip
+.swiftpm/
+xcuserdata/
