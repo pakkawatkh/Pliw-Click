@@ -111,6 +111,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         currentAppMenuItem = menu.addItem(withTitle: "", action: nil, keyEquivalent: "")
         currentAppMenuItem.image = symbol("macwindow")
         let currentAppSubmenu = NSMenu()
+        currentAppSubmenu.autoenablesItems = false
         ignoreAutoscrollItem = currentAppSubmenu.addItem(withTitle: "", action: #selector(toggleIgnoreAutoscroll), keyEquivalent: "")
         ignoreAutoscrollItem.target = self
         ignoreAppItem = currentAppSubmenu.addItem(withTitle: "", action: #selector(toggleIgnoreApp), keyEquivalent: "")
@@ -216,13 +217,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         let lang = config.language
         if let app = AppInspector.frontmostApp(), let name = app.localizedName, let bundleID = app.bundleIdentifier {
+            let isBrowser = BrowserRegistry.isBrowser(bundleID: bundleID)
             currentAppMenuItem.title = name
             currentAppMenuItem.isHidden = false
 
             ignoreAutoscrollItem.title = L10n.t("ปิด Autoscroll ในแอปนี้", "Pause Autoscroll", lang: lang)
-            ignoreAutoscrollItem.state = config.autoscrollIgnoredBundles.contains(bundleID) ? .on : .off
+            ignoreAutoscrollItem.isEnabled = isBrowser
+            ignoreAutoscrollItem.state = isBrowser && config.autoscrollIgnoredBundles.contains(bundleID) ? .on : .off
 
             ignoreAppItem.title = L10n.t("ยกเว้นแอปนี้ทั้งหมด", "Ignore App", lang: lang)
+            ignoreAppItem.isEnabled = true
             ignoreAppItem.state = config.ignoredAppBundles.contains(bundleID) ? .on : .off
         } else {
             currentAppMenuItem.isHidden = true

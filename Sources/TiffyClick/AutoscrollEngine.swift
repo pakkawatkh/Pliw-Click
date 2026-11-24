@@ -57,11 +57,11 @@ final class AutoscrollEngine {
             currentCursor = location
             lock.unlock()
 
-            // Only activate Autoscroll where allowed (by default: scrollable empty browser areas only!)
+            // Autoscroll is strictly for scrollable empty webpage areas inside browsers
             guard SystemPermissions.canActivateAutoscroll(
                 at: location,
                 bundleID: bundleID,
-                browsersOnly: config.autoscrollBrowsersOnly
+                browsersOnly: true
             ) else {
                 return false
             }

@@ -97,10 +97,8 @@ private struct GeneralSettingsTab: View {
                 .pickerStyle(.segmented)
             }
 
-            Section(L10n.t("เลื่อนอัตโนมัติ (Autoscroll)", "Autoscroll", lang: lang)) {
+            Section(L10n.t("เลื่อนอัตโนมัติในเบราว์เซอร์ (Autoscroll)", "Browser Autoscroll", lang: lang)) {
                 Toggle(L10n.t("เปิดใช้งาน Autoscroll", "Enable Autoscroll", lang: lang), isOn: $config.autoscrollEnabled)
-
-                Toggle(L10n.t("เฉพาะพื้นที่ว่างในเบราว์เซอร์", "Browser Webpages Only", lang: lang), isOn: $config.autoscrollBrowsersOnly)
 
                 Toggle(L10n.t("รองรับปุ่มกลางของเมาส์ภายนอก", "Physical Mouse Middle Button", lang: lang), isOn: $config.autoscrollForPhysicalMouse)
 
@@ -262,7 +260,7 @@ private struct AppsSettingsTab: View {
                 }
 
                 HStack {
-                    TextField("com.figma.Desktop", text: $newBundleID)
+                    TextField("com.google.Chrome", text: $newBundleID)
                     Button(L10n.t("เพิ่ม", "Add", lang: lang)) {
                         let trimmed = newBundleID.trimmingCharacters(in: .whitespacesAndNewlines)
                         guard !trimmed.isEmpty else { return }
