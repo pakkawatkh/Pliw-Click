@@ -62,10 +62,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.behavior = .removalAllowed
 
         if let button = statusItem.button {
-            let image = NSImage(systemSymbolName: "computermouse.fill", accessibilityDescription: "tiffy-click")
+            let image = NSImage(systemSymbolName: "computermouse.fill", accessibilityDescription: "Tiffy Click")
             image?.isTemplate = true
             button.image = image
-            button.toolTip = "tiffy-click"
+            button.toolTip = "Tiffy Click"
         }
 
         let menu = NSMenu()
@@ -194,7 +194,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             "v\(updater.currentVersion) · Check for Updates…",
             lang: lang
         )
-        quitMenuItem.title = L10n.t("ออกจาก tiffy-click", "Quit tiffy-click", lang: lang)
+        quitMenuItem.title = L10n.t("ออกจาก Tiffy Click", "Quit Tiffy Click", lang: lang)
 
         langThItem.state = lang == .th ? .on : .off
         langEnItem.state = lang == .en ? .on : .off
@@ -287,7 +287,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func openSettings() {
         let lang = config.language
         if let window = settingsWindow {
-            window.title = L10n.t("การตั้งค่า tiffy-click", "tiffy-click Settings", lang: lang)
+            window.title = L10n.t("การตั้งค่า Tiffy Click", "Tiffy Click Settings", lang: lang)
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -301,7 +301,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let hosting = NSHostingController(rootView: rootView)
 
         let window = NSWindow(contentViewController: hosting)
-        window.title = L10n.t("การตั้งค่า tiffy-click", "tiffy-click Settings", lang: lang)
+        window.title = L10n.t("การตั้งค่า Tiffy Click", "Tiffy Click Settings", lang: lang)
         window.styleMask = [.titled, .closable, .miniaturizable]
         window.center()
         window.isReleasedWhenClosed = false

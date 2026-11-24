@@ -6,17 +6,17 @@ PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 cd "${PROJECT_DIR}"
 
-echo "🔨 Building tiffy-click (Release mode)..."
+echo "🔨 Building Tiffy Click (Release mode)..."
 swift build -c release -Xswiftc -cross-module-optimization
 
 RELEASE_BIN="${PROJECT_DIR}/.build/release/tiffy-click"
-APP_DIR="${PROJECT_DIR}/tiffy-click.app"
+APP_DIR="${PROJECT_DIR}/Tiffy Click.app"
 CONTENTS_DIR="${APP_DIR}/Contents"
 MACOS_DIR="${CONTENTS_DIR}/MacOS"
 RESOURCES_DIR="${CONTENTS_DIR}/Resources"
 
-echo "📦 Assembling tiffy-click.app bundle..."
-rm -rf "${APP_DIR}"
+echo "📦 Assembling Tiffy Click.app bundle..."
+rm -rf "${PROJECT_DIR}/tiffy-click.app" "${APP_DIR}"
 mkdir -p "${MACOS_DIR}"
 mkdir -p "${RESOURCES_DIR}"
 
@@ -40,15 +40,15 @@ cat << 'EOF' > "${CONTENTS_DIR}/Info.plist"
     <key>CFBundleIdentifier</key>
     <string>com.local.tiffy-click</string>
     <key>CFBundleName</key>
-    <string>tiffy-click</string>
+    <string>Tiffy Click</string>
     <key>CFBundleDisplayName</key>
-    <string>tiffy-click</string>
+    <string>Tiffy Click</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.1.9</string>
+    <string>1.2.0</string>
     <key>CFBundleVersion</key>
-    <string>1.1.9</string>
+    <string>1.2.0</string>
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
     <key>LSUIElement</key>
@@ -61,7 +61,7 @@ cat << 'EOF' > "${CONTENTS_DIR}/Info.plist"
 </plist>
 EOF
 
-echo "🔏 Code signing tiffy-click.app with stable certificate..."
+echo "🔏 Code signing Tiffy Click.app with stable certificate..."
 SIGN_CERT="MonkeyToolsDeveloper"
 if ! security find-certificate -c "${SIGN_CERT}" ~/Library/Keychains/login.keychain-db >/dev/null 2>&1; then
     if security find-certificate -c "MonkeyCopyDeveloper" ~/Library/Keychains/login.keychain-db >/dev/null 2>&1; then
@@ -87,11 +87,12 @@ codesign --force --deep --sign "${SIGN_CERT}" "${APP_DIR}" || codesign --force -
 echo "✅ Successfully built: ${APP_DIR}"
 
 if [ -z "${SKIP_INSTALL}" ]; then
-    echo "📲 Updating /Applications/tiffy-click.app..."
-    pkill -9 -f "/Applications/tiffy-click.app" || true
-    rm -rf "/Applications/tiffy-click.app"
-    cp -R "${APP_DIR}" "/Applications/tiffy-click.app"
-    echo "🎉 Installed /Applications/tiffy-click.app"
+    echo "📲 Updating /Applications/Tiffy Click.app..."
+    pkill -9 -f "Tiffy Click.app" || true
+    pkill -9 -f "tiffy-click.app" || true
+    rm -rf "/Applications/tiffy-click.app" "/Applications/Tiffy Click.app"
+    cp -R "${APP_DIR}" "/Applications/Tiffy Click.app"
+    echo "🎉 Installed /Applications/Tiffy Click.app"
 else
     echo "⏭️ Skipping install to /Applications because SKIP_INSTALL is set."
 fi

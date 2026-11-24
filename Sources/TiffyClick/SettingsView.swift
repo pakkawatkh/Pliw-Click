@@ -56,7 +56,7 @@ private struct GeneralSettingsTab: View {
                                 .font(.headline)
                             Text(L10n.t(
                                 "อนุญาตใน การตั้งค่าระบบ เพื่อเปิดใช้งานคลิกกลางและ Autoscroll",
-                                "Allow tiffy-click in System Settings to enable middle-click and Autoscroll.",
+                                "Allow Tiffy Click in System Settings to enable middle-click and Autoscroll.",
                                 lang: lang
                             ))
                             .font(.caption)
@@ -74,7 +74,7 @@ private struct GeneralSettingsTab: View {
             }
 
             Section(L10n.t("ทั่วไป", "General", lang: lang)) {
-                Toggle(L10n.t("เปิดใช้งาน tiffy-click", "Enable tiffy-click", lang: lang), isOn: $config.isEnabled)
+                Toggle(L10n.t("เปิดใช้งาน Tiffy Click", "Enable Tiffy Click", lang: lang), isOn: $config.isEnabled)
 
                 Toggle(L10n.t("เปิดอัตโนมัติเมื่อเข้าสู่ระบบ", "Launch at Login", lang: lang), isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { enabled in
@@ -317,7 +317,7 @@ private struct AboutSettingsTab: View {
             }
 
             VStack(spacing: 4) {
-                Text("tiffy-click")
+                Text("Tiffy Click")
                     .font(.title2.weight(.semibold))
                 Text(L10n.t("เวอร์ชัน \(updater.currentVersion)", "Version \(updater.currentVersion)", lang: lang))
                     .font(.subheadline)

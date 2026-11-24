@@ -73,7 +73,7 @@ private struct UpdateToastView: View {
                         Text(L10n.t("เป็นเวอร์ชันล่าสุดแล้ว", "Up to Date", lang: lang))
                             .font(.system(size: 13, weight: .semibold))
                     }
-                    Text("tiffy-click v\(version)")
+                    Text("Tiffy Click v\(version)")
                         .font(.system(size: 11.5))
                         .foregroundColor(.secondary)
 
@@ -357,16 +357,22 @@ final class UpdateChecker: ObservableObject {
                 try ditto.run()
                 ditto.waitUntilExit()
 
-                let extractedApp = tempDir.appendingPathComponent("tiffy-click.app")
+                let candidateNew = tempDir.appendingPathComponent("Tiffy Click.app")
+                let candidateOld = tempDir.appendingPathComponent("tiffy-click.app")
+                let extractedApp = fm.fileExists(atPath: candidateNew.path) ? candidateNew : candidateOld
                 guard ditto.terminationStatus == 0, fm.fileExists(atPath: extractedApp.path) else {
                     openDownloadPage(meta)
                     toast.hide()
                     return
                 }
 
-                let targetApp = URL(fileURLWithPath: "/Applications/tiffy-click.app")
+                let targetApp = URL(fileURLWithPath: "/Applications/Tiffy Click.app")
+                let legacyApp = URL(fileURLWithPath: "/Applications/tiffy-click.app")
                 if fm.fileExists(atPath: targetApp.path) {
                     try fm.removeItem(at: targetApp)
+                }
+                if fm.fileExists(atPath: legacyApp.path) {
+                    try? fm.removeItem(at: legacyApp)
                 }
                 try fm.copyItem(at: extractedApp, to: targetApp)
                 try? fm.removeItem(at: tempDir)
