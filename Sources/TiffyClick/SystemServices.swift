@@ -8,6 +8,9 @@ import TiffyClickCore
 let logger = Logger(subsystem: "com.local.tiffy-click", category: "TiffyClick")
 
 enum SystemPermissions {
+    private static let axQueueLock = NSLock()
+    private static var enhancedAXEnabledPIDs: Set<pid_t> = []
+
     static func isAccessibilityGranted(prompt: Bool = false) -> Bool {
         let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue(): prompt] as CFDictionary
         return AXIsProcessTrustedWithOptions(options)
@@ -35,31 +38,77 @@ enum SystemPermissions {
         )
     }
 
+    /// Returns the bundle identifier of the application actually under `cgPoint` (even if unfocused).
+    static func bundleIDAtCursor(_ cgPoint: CGPoint) -> String? {
+        let systemWide = AXUIElementCreateSystemWide()
+        var elementRef: AXUIElement?
+        if AXUIElementCopyElementAtPosition(systemWide, Float(cgPoint.x), Float(cgPoint.y), &elementRef) == .success,
+           let element = elementRef {
+            var pid: pid_t = 0
+            if AXUIElementGetPid(element, &pid) == .success,
+               let app = NSRunningApplication(processIdentifier: pid),
+               let bundleID = app.bundleIdentifier {
+                return bundleID
+            }
+        }
+        return AppInspector.frontmostBundleID()
+    }
+
     /// Determines whether Autoscroll should activate at `cgPoint`.
-    /// When `browsersOnly` is true (default), Autoscroll activates ONLY on empty, scrollable webpage areas
-    /// inside a web browser — everywhere else (desktop, non-browser apps, browser tabs/toolbars, links,
-    /// buttons, text inputs, non-scrollable pages) behaves as a normal middle click.
+    /// When `browsersOnly` is true (default), Autoscroll activates ONLY on empty webpage areas
+    /// inside a web browser — everywhere else (desktop, non-browser apps, browser tabs/toolbars,
+    /// links, buttons, text inputs) behaves as a normal middle click.
     static func canActivateAutoscroll(at cgPoint: CGPoint, bundleID: String?, browsersOnly: Bool) -> Bool {
+        let targetBundleID = bundleIDAtCursor(cgPoint) ?? bundleID
         if browsersOnly {
-            guard BrowserRegistry.isBrowser(bundleID: bundleID) else {
+            guard BrowserRegistry.isBrowser(bundleID: targetBundleID) else {
                 return false
             }
-            return isScrollableEmptyWebArea(at: cgPoint)
+            return isEmptyBrowserWebArea(at: cgPoint, bundleID: targetBundleID)
         } else {
             return !isInteractiveMiddleClickTarget(at: cgPoint)
         }
     }
 
-    /// Checks via macOS Accessibility whether `cgPoint` is inside a scrollable, non-interactive `AXWebArea`.
-    private static func isScrollableEmptyWebArea(at cgPoint: CGPoint) -> Bool {
+    /// Checks via macOS Accessibility whether `cgPoint` is on an empty, non-interactive webpage area
+    /// inside a browser (excluding tabs, toolbars, address bar, links, buttons, and inputs).
+    private static func isEmptyBrowserWebArea(at cgPoint: CGPoint, bundleID: String?) -> Bool {
         let systemWide = AXUIElementCreateSystemWide()
         var elementRef: AXUIElement?
-        let result = AXUIElementCopyElementAtPosition(systemWide, Float(cgPoint.x), Float(cgPoint.y), &elementRef)
-        guard result == .success, var current = elementRef else {
+        guard AXUIElementCopyElementAtPosition(systemWide, Float(cgPoint.x), Float(cgPoint.y), &elementRef) == .success,
+              let initialElement = elementRef else {
             return false
         }
 
-        let interactiveRoles: Set<String> = [
+        // Chromium browsers lazily disable AXWebArea until AXEnhancedUserInterface is enabled once.
+        var pid: pid_t = 0
+        if AXUIElementGetPid(initialElement, &pid) == .success,
+           let bundleID,
+           isChromiumBrowser(bundleID: bundleID) {
+            let needsEnable: Bool = {
+                axQueueLock.lock()
+                defer { axQueueLock.unlock() }
+                if enhancedAXEnabledPIDs.contains(pid) { return false }
+                enhancedAXEnabledPIDs.insert(pid)
+                return true
+            }()
+            if needsEnable {
+                let appElement = AXUIElementCreateApplication(pid)
+                AXUIElementSetAttributeValue(appElement, "AXEnhancedUserInterface" as CFString, kCFBooleanTrue)
+                // Re-query immediately in case Chromium populated synchronously
+                var refreshed: AXUIElement?
+                if AXUIElementCopyElementAtPosition(systemWide, Float(cgPoint.x), Float(cgPoint.y), &refreshed) == .success,
+                   let refreshed {
+                    return evaluateBrowserElement(refreshed, at: cgPoint, isChromium: true)
+                }
+            }
+        }
+
+        return evaluateBrowserElement(initialElement, at: cgPoint, isChromium: bundleID.map(isChromiumBrowser) ?? false)
+    }
+
+    private static func evaluateBrowserElement(_ startElement: AXUIElement, at cgPoint: CGPoint, isChromium: Bool) -> Bool {
+        let interactiveOrChromeRoles: Set<String> = [
             "AXLink",
             "AXTab",
             "AXTabButton",
@@ -71,6 +120,8 @@ enum SystemPermissions {
             "AXPopUpButton",
             "AXMenuItem",
             "AXMenuBarItem",
+            "AXMenuBar",
+            "AXMenu",
             "AXCheckBox",
             "AXSlider",
             "AXToolbar",
@@ -80,19 +131,23 @@ enum SystemPermissions {
         let interactiveSubroles: Set<String> = [
             "AXTabButton",
             "AXCloseButton",
+            "AXMinimizeButton",
+            "AXZoomButton",
+            "AXFullScreenButton",
             "AXLink",
             "AXSearchField"
         ]
 
-        var webArea: AXUIElement?
-        var scrollArea: AXUIElement?
+        var current = startElement
+        var foundWebArea = false
+        var hitWindow: AXUIElement?
 
-        for _ in 0..<18 {
+        for _ in 0..<24 {
             let role = axStringAttribute(current, kAXRoleAttribute)
             let subrole = axStringAttribute(current, kAXSubroleAttribute)
 
-            if webArea == nil {
-                if let role, interactiveRoles.contains(role) {
+            if !foundWebArea {
+                if let role, interactiveOrChromeRoles.contains(role) {
                     return false
                 }
                 if let subrole, interactiveSubroles.contains(subrole) {
@@ -104,13 +159,12 @@ enum SystemPermissions {
             }
 
             if role == "AXWebArea" {
-                webArea = current
-            } else if role == "AXScrollArea" {
-                scrollArea = current
-                if webArea != nil {
-                    break
-                }
-            } else if role == "AXWindow" || role == "AXApplication" {
+                foundWebArea = true
+                break
+            } else if role == "AXWindow" {
+                hitWindow = current
+                break
+            } else if role == "AXApplication" {
                 break
             }
 
@@ -118,24 +172,32 @@ enum SystemPermissions {
             current = parent
         }
 
-        // Must be inside an actual webpage viewport (never browser tabs/toolbar/bookmarks)
-        guard let webArea else { return false }
+        if foundWebArea {
+            return true
+        }
 
-        // Check scrollability if enclosing AXScrollArea exposes scrollbars or frame dimensions
-        if let scrollArea {
-            if hasAttribute(scrollArea, kAXVerticalScrollBarAttribute)
-                || hasAttribute(scrollArea, kAXHorizontalScrollBarAttribute) {
+        // Fallback for Chromium on the very first click before its async AXWebArea tree finishes building:
+        // If we did NOT hit any toolbar/tab/button/input AND the cursor is well below the browser's top chrome (~84pt),
+        // treat it as webpage content area.
+        if isChromium, let window = hitWindow, let frame = axFrameAttribute(window) {
+            let yOffsetFromWindowTop = cgPoint.y - frame.origin.y
+            if yOffsetFromWindowTop > 88 {
                 return true
-            }
-            if let webSize = axSizeAttribute(webArea),
-               let scrollSize = axSizeAttribute(scrollArea) {
-                return webSize.height > scrollSize.height + 2 || webSize.width > scrollSize.width + 2
             }
         }
 
-        // Fallback: if browser hides scrollArea attributes (e.g. certain Chromium/Arc builds),
-        // allow autoscroll inside non-interactive AXWebArea
-        return true
+        return false
+    }
+
+    private static func isChromiumBrowser(bundleID: String) -> Bool {
+        let lower = bundleID.lowercased()
+        return lower.contains("chrome")
+            || lower.contains("brave")
+            || lower.contains("edgemac")
+            || lower.contains("thebrowser")
+            || lower.contains("vivaldi")
+            || lower.contains("opera")
+            || lower.contains("chromium")
     }
 
     private static func axStringAttribute(_ element: AXUIElement, _ attribute: String) -> String? {
@@ -159,18 +221,22 @@ enum SystemPermissions {
         return (parent as! AXUIElement)
     }
 
-    private static func axSizeAttribute(_ element: AXUIElement) -> CGSize? {
-        var value: CFTypeRef?
-        guard AXUIElementCopyAttributeValue(element, kAXSizeAttribute as CFString, &value) == .success,
-              let raw = value,
-              CFGetTypeID(raw) == AXValueGetTypeID() else {
+    private static func axFrameAttribute(_ element: AXUIElement) -> CGRect? {
+        var posVal: CFTypeRef?
+        var sizeVal: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, kAXPositionAttribute as CFString, &posVal) == .success,
+              AXUIElementCopyAttributeValue(element, kAXSizeAttribute as CFString, &sizeVal) == .success,
+              let pRaw = posVal, CFGetTypeID(pRaw) == AXValueGetTypeID(),
+              let sRaw = sizeVal, CFGetTypeID(sRaw) == AXValueGetTypeID() else {
             return nil
         }
+        var point = CGPoint.zero
         var size = CGSize.zero
-        if AXValueGetValue(raw as! AXValue, .cgSize, &size) {
-            return size
+        guard AXValueGetValue(pRaw as! AXValue, .cgPoint, &point),
+              AXValueGetValue(sRaw as! AXValue, .cgSize, &size) else {
+            return nil
         }
-        return nil
+        return CGRect(origin: point, size: size)
     }
 
     /// Inspects the accessibility element under the CG screen coordinate.
@@ -184,7 +250,6 @@ enum SystemPermissions {
             return false
         }
 
-        // Walk up to 4 levels to catch text nodes nested inside AXLink or AXTab
         let interactiveRoles: Set<String> = [
             "AXLink",
             "AXTab",
@@ -200,41 +265,28 @@ enum SystemPermissions {
             "AXLink"
         ]
 
-        for _ in 0..<4 {
-            var roleVal: CFTypeRef?
-            if AXUIElementCopyAttributeValue(current, kAXRoleAttribute as CFString, &roleVal) == .success,
-               let role = roleVal as? String {
+        for _ in 0..<6 {
+            let role = axStringAttribute(current, kAXRoleAttribute)
+            if let role {
                 if interactiveRoles.contains(role) {
                     return true
                 }
-                // Stop walking once we hit a web area or scroll area container
                 if role == "AXWebArea" || role == "AXScrollArea" || role == "AXWindow" {
                     return false
                 }
             }
 
-            var subroleVal: CFTypeRef?
-            if AXUIElementCopyAttributeValue(current, kAXSubroleAttribute as CFString, &subroleVal) == .success,
-               let subrole = subroleVal as? String,
+            if let subrole = axStringAttribute(current, kAXSubroleAttribute),
                interactiveSubroles.contains(subrole) {
                 return true
             }
 
-            // Check if element has an AXURL attribute (common for links in Electron/Chromium)
-            var urlVal: CFTypeRef?
-            if AXUIElementCopyAttributeValue(current, "AXURL" as CFString, &urlVal) == .success,
-               urlVal != nil {
-                // Only treat as link if not the whole AXWebArea (checked above)
+            if hasAttribute(current, "AXURL") {
                 return true
             }
 
-            var parentVal: CFTypeRef?
-            guard AXUIElementCopyAttributeValue(current, kAXParentAttribute as CFString, &parentVal) == .success,
-                  let parent = parentVal,
-                  CFGetTypeID(parent) == AXUIElementGetTypeID() else {
-                break
-            }
-            current = parent as! AXUIElement
+            guard let parent = axParent(of: current) else { break }
+            current = parent
         }
 
         return false
