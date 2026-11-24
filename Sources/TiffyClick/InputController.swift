@@ -129,7 +129,9 @@ final class InputController {
         stateLock.unlock()
 
         if result.shouldTriggerTapMiddleClick {
-            handleTapMiddleClick(config: config)
+            DispatchQueue.main.async { [weak self] in
+                self?.handleTapMiddleClick(config: config)
+            }
         }
     }
 

@@ -57,16 +57,24 @@ enum SystemPermissions {
     /// Returns true if the current macOS system cursor is the pointing-hand cursor
     /// (shown by browsers whenever hovering over links, clickable cards, or interactive buttons).
     static func isPointingHandCursor() -> Bool {
-        guard let current = NSCursor.currentSystem else { return false }
-        let hand = NSCursor.pointingHand
-        if current == hand { return true }
-        if current.hotSpot == hand.hotSpot,
-           let curData = current.image.tiffRepresentation,
-           let handData = hand.image.tiffRepresentation,
-           curData == handData {
-            return true
+        let check: () -> Bool = {
+            guard let current = NSCursor.currentSystem else { return false }
+            let hand = NSCursor.pointingHand
+            if current == hand { return true }
+            // Fast hotSpot check first before comparing image bytes
+            if current.hotSpot == hand.hotSpot,
+               let curData = current.image.tiffRepresentation,
+               let handData = hand.image.tiffRepresentation,
+               curData == handData {
+                return true
+            }
+            return false
         }
-        return false
+        if Thread.isMainThread {
+            return check()
+        } else {
+            return DispatchQueue.main.sync(execute: check)
+        }
     }
 
     /// Determines whether Autoscroll should activate at `cgPoint`.
@@ -174,9 +182,6 @@ enum SystemPermissions {
                     return false
                 }
                 if role != "AXWebArea" && hasAttribute(current, "AXURL") {
-                    return false
-                }
-                if role != "AXWebArea" && role != "AXWindow" && role != "AXScrollArea" && hasAction(current, kAXPressAction) {
                     return false
                 }
             }
