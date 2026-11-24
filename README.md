@@ -1,21 +1,51 @@
 # 🖱️ tiffy-click
 
-**Universal Middle-Click, Middle-Drag & Windows-Style Autoscroll for macOS**
+**Middle-Click, Middle-Drag & macOS Liquid Glass Browser Autoscroll**
 
-`tiffy-click` brings true Windows-style middle-click scrolling (Hold Scroll & Toggle Autoscroll) and 3-finger Trackpad / Magic Mouse middle-click + middle-drag to every app on macOS 13.0+.
+[![Version](https://img.shields.io/badge/Release-v1.1.9-06b6d4?style=for-the-badge)](https://pakkawatkh.github.io/tiffy-app/tiffy-click/)
+[![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B-lightgrey?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/tiffy-click)
+[![License](https://img.shields.io/badge/License-GPL--3.0-blue?style=for-the-badge)](LICENSE)
 
-## ✨ Features
+`tiffy-click` brings Windows-style smooth **Browser Autoscroll** (with a compact `28pt` Apple Liquid Glass 360° orb) plus 2–10 finger Trackpad / Magic Mouse **Middle-Click, Tap & Middle-Drag** to macOS 13.0+.
 
-- **Windows-Style Universal Autoscroll (Hold Scroll & Toggle):**
-  - **Smart Mode (Default):** Middle-click on empty page areas to lock 4-way Autoscroll (with a floating 4-direction HUD indicator), or hold & move to scroll and stop on release. Middle-clicking on links (`AXLink`) or browser tabs (`AXTab`) still opens/closes tabs normally!
-  - **Hold & Drag Mode:** Hold middle button / 3-finger click and move to scroll; quick click behaves as standard middle click.
-  - **Works System-Wide:** Chrome, Safari, Arc, Brave, Edge, VS Code, PDF viewers, and more — for both **Physical Mouse** and **Trackpad**.
-- **Full Middle-Drag Support:** Properly translates 3-finger drag into `.otherMouseDragged` (`.center`) for panning/orbiting in Figma, Blender, and CAD apps.
-- **Multitouch Trackpad & Magic Mouse:** Configurable 2–5 fingers, Tap-to-Click, adjustable tap speed/distance, and built-in **Palm Rejection** edge filtering.
-- **Per-App Rules & Settings UI:** Native SwiftUI Settings window, one-click ignore for focused app (or disable Autoscroll only while keeping Middle-Drag), Launch at Login, and In-App Update Checker.
-- **System Resilience:** Automatically recovers listeners after Sleep/Wake, Fast User Switching, Display reconfiguration, and Magic Mouse/Trackpad hot-plugging.
+- 🌐 **Live Website & Interactive Preview:** https://pakkawatkh.github.io/tiffy-app/tiffy-click/
+- 📥 **Direct Download (DMG · 2.1 MB):** https://pakkawatkh.github.io/tiffy-app/tiffy-click/tiffy-click-Installer.dmg
+- 🗜️ **ZIP Archive (1.7 MB):** https://pakkawatkh.github.io/tiffy-app/tiffy-click/tiffy-click.zip
 
-## 🛠️ Build & Test
+---
+
+## ✨ Features & Usage Examples
+
+- **🫧 Apple Liquid Glass 360° Browser Autoscroll:**
+  - Middle-click (physical mouse or multi-finger Trackpad) on **empty webpage areas** in Chrome, Safari, Brave, Arc, Edge, or Firefox to activate the compact `28pt` frosted-glass orb.
+  - A slender rim-hugging chevron orbits **360°** toward your cursor as you scroll, and disappears cleanly when idle.
+  - Supports both **Click-to-Toggle** (click again or press `Esc` to stop) and **Hold-and-Drag** (release to stop).
+- **🎯 Smart Link, Tab & Non-Browser Protection:**
+  - Automatically detects pointing-hand cursors (`NSCursor.pointingHand`), links (`AXLink`), buttons (`AXButton`), and browser tabs — middle-clicking a link still opens a new tab, and middle-clicking a tab still closes it.
+  - Outside web browsers (VS Code, Figma, Blender, Terminal, Finder), middle-click & middle-drag work 100% natively.
+- **🖐️ 2–10 Finger Trackpad Click, Tap & Full Middle-Drag:**
+  - Configurable 2–10 fingers right from the Menu Bar, optional `N+` fingers, Tap-to-Click, edge **Palm Rejection**, and proper `.otherMouseDragged` support for panning/orbiting in Figma, Blender, and CAD.
+- **🇹🇭 / 🇺🇸 Minimal macOS UI & Floating Update Toast:**
+  - Bilingual Thai (`th`) & English (`en`) interface, native SwiftUI Settings, Launch at Login, and an auto-fading frosted-glass update toast with one-click in-app updates.
+
+---
+
+## 🚀 Installation Guide (วิธีติดตั้ง)
+
+1. Download **`tiffy-click-Installer.dmg`** from the link above and double-click to open it.
+2. Drag **`tiffy-click.app`** into the **Applications** folder.
+3. **First-Time Launch (macOS Gatekeeper):**
+   - Open **System Settings → Privacy & Security → Open Anyway**, **or**
+   - Run in Terminal:
+     ```bash
+     xattr -cr /Applications/tiffy-click.app
+     ```
+4. **Accessibility Permission (สิทธิ์การช่วยการเข้าถึง):**
+   - Enable **tiffy-click** in **System Settings → Privacy & Security → Accessibility**.
+
+---
+
+## 🛠️ Build & Test from Source
 
 ```bash
 swift test
