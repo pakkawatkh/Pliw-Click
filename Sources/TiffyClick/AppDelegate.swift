@@ -81,19 +81,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         permissionSeparator = NSMenuItem.separator()
         menu.addItem(permissionSeparator)
 
-        // Core toggles
+        // Section 1: Core toggles (checkmark-only section for crisp alignment)
         enabledItem = menu.addItem(withTitle: "", action: #selector(toggleEnabled), keyEquivalent: "")
         enabledItem.target = self
 
         autoscrollToggleItem = menu.addItem(withTitle: "", action: #selector(toggleAutoscroll), keyEquivalent: "")
         autoscrollToggleItem.target = self
 
-        menu.addItem(.separator())
-
-        // Trackpad & per-app controls
         tapToClickItem = menu.addItem(withTitle: "", action: #selector(toggleTapToClick), keyEquivalent: "")
         tapToClickItem.target = self
 
+        menu.addItem(.separator())
+
+        // Section 2: Submenus (all items have SF Symbol icons for uniform alignment)
         fingersMenuItem = menu.addItem(withTitle: "", action: nil, keyEquivalent: "")
         fingersMenuItem.image = symbol("hand.tap")
         let fingersSubmenu = NSMenu()
