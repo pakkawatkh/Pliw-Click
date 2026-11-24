@@ -71,19 +71,21 @@ private struct AutoscrollSettingsTab: View {
                 }
             }
 
-            Section(L10n.t("โหมด Autoscroll (Hold Scroll แบบ Windows)", "Autoscroll Mode (Windows-Style Hold Scroll)", lang: lang)) {
+            Section(L10n.t("Autoscroll (Hold Scroll แบบ Windows)", "Autoscroll (Windows-Style Hold Scroll)", lang: lang)) {
                 Toggle(L10n.t("เปิดใช้งาน tiffy-click", "Enable tiffy-click", lang: lang), isOn: $config.isEnabled)
 
-                Picker(L10n.t("โหมดการทำงาน", "Scroll Mode", lang: lang), selection: $config.autoscrollMode) {
-                    ForEach(AutoscrollMode.allCases) { mode in
-                        Text(mode.displayName(lang: lang)).tag(mode)
-                    }
-                }
-                .pickerStyle(.radioGroup)
+                Toggle(
+                    L10n.t("เปิด Autoscroll (Hold Scroll)", "Enable Autoscroll (Hold Scroll)", lang: lang),
+                    isOn: $config.autoscrollEnabled
+                )
 
-                Text(config.autoscrollMode.descriptionText(lang: lang))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                Text(L10n.t(
+                    "คลิกกลางบนพื้นที่ว่างในหน้าเว็บเพื่อล็อกการเลื่อน หรือกดค้างแล้วเลื่อน (คลิกบนลิงก์/แท็บยังทำงานปกติ)",
+                    "Middle-click empty webpage areas to toggle scrolling or hold & move to scroll (links and browser tabs still work normally).",
+                    lang: lang
+                ))
+                .font(.caption)
+                .foregroundColor(.secondary)
 
                 Toggle(
                     L10n.t("ทำงานเฉพาะพื้นที่ว่างที่เลื่อนได้ในเบราว์เซอร์ (แนะนำ)", "Only on Scrollable Empty Areas in Browsers (Recommended)", lang: lang),

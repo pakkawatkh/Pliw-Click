@@ -10,8 +10,8 @@ let kTiffySyntheticEventTag: Int64 = 0x54494646 // "TIFF"
 final class AutoscrollEngine {
     enum State {
         case inactive
-        /// Middle button is down, waiting to see if user drags past threshold (Hold) or releases quickly.
-        case pending(anchor: CGPoint, mode: AutoscrollMode, interactiveTarget: Bool)
+        /// Middle button is down, waiting to see if user drags past threshold (Hold) or releases quickly (Toggle).
+        case pending(anchor: CGPoint)
         /// Actively scrolling while holding middle button; releasing stops autoscroll.
         case activeHold(anchor: CGPoint)
         /// Actively scrolling in locked toggle mode; next click or Esc stops autoscroll.
@@ -42,7 +42,7 @@ final class AutoscrollEngine {
 
     /// Handles a middle mouse down event. Returns `true` if the event should be swallowed.
     func handleMiddleDown(at location: CGPoint, bundleID: String?, config: ConfigSnapshot) -> Bool {
-        guard config.autoscrollMode != .off else { return false }
+        guard config.autoscrollEnabled else { return false }
 
         lock.lock()
         switch state {
@@ -66,19 +66,11 @@ final class AutoscrollEngine {
                 return false
             }
 
-            if config.autoscrollMode == .smart {
-                lock.lock()
-                state = .pending(anchor: location, mode: .smart, interactiveTarget: false)
-                lock.unlock()
-                startScrolling(at: location, horizontalEnabled: config.autoscrollHorizontalEnabled)
-                return true
-            } else {
-                // holdOnly mode: buffer until dragged past threshold; if released without drag, replay middle click
-                lock.lock()
-                state = .pending(anchor: location, mode: .holdOnly, interactiveTarget: false)
-                lock.unlock()
-                return true
-            }
+            lock.lock()
+            state = .pending(anchor: location)
+            lock.unlock()
+            startScrolling(at: location, horizontalEnabled: config.autoscrollHorizontalEnabled)
+            return true
         }
     }
 
@@ -87,15 +79,10 @@ final class AutoscrollEngine {
         lock.lock()
         currentCursor = location
 
-        if case let .pending(anchor, mode, _) = state {
+        if case let .pending(anchor) = state {
             let dist = AutoscrollMath.distance(from: anchor, to: location)
             if dist >= config.autoscrollDragThreshold {
                 state = .activeHold(anchor: anchor)
-                lock.unlock()
-                if mode == .holdOnly {
-                    startScrolling(at: anchor, horizontalEnabled: config.autoscrollHorizontalEnabled)
-                }
-                return
             }
         }
         lock.unlock()
@@ -122,19 +109,11 @@ final class AutoscrollEngine {
             lock.unlock()
             return true
 
-        case let .pending(anchor, mode, _):
-            if mode == .smart {
-                // Released without dragging far -> lock into Toggle Autoscroll (Windows style!)
-                state = .activeToggle(anchor: anchor)
-                lock.unlock()
-                return true
-            } else {
-                // holdOnly mode: released without dragging -> replay standard middle click!
-                state = .inactive
-                lock.unlock()
-                Self.postSyntheticMiddleClick(at: location)
-                return true
-            }
+        case let .pending(anchor):
+            // Released without dragging far -> lock into Toggle Autoscroll (Windows style!)
+            state = .activeToggle(anchor: anchor)
+            lock.unlock()
+            return true
         }
     }
 
@@ -203,7 +182,7 @@ final class AutoscrollEngine {
         lock.lock()
         let anchor: CGPoint?
         switch state {
-        case let .activeHold(a), let .activeToggle(a), let .pending(a, .smart, _):
+        case let .activeHold(a), let .activeToggle(a), let .pending(a):
             anchor = a
         default:
             anchor = nil

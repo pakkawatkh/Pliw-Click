@@ -136,7 +136,7 @@ final class InputController {
     private func handleTapMiddleClick(config: ConfigSnapshot) {
         let location = CGEvent(source: nil)?.location ?? .zero
         let frontmost = AppInspector.frontmostBundleID()
-        let autoscrollAllowed = config.autoscrollMode == .smart
+        let autoscrollAllowed = config.autoscrollEnabled
             && !(frontmost.map { config.autoscrollIgnoredBundles.contains($0) } ?? false)
 
         if autoscrollAllowed, let engine = autoscrollEngine {
@@ -261,7 +261,7 @@ final class InputController {
             return Unmanaged.passUnretained(event)
         }
 
-        let autoscrollAllowed = config.autoscrollMode != .off
+        let autoscrollAllowed = config.autoscrollEnabled
             && !(frontmost.map { config.autoscrollIgnoredBundles.contains($0) } ?? false)
 
         // Escape cancels active Toggle Autoscroll

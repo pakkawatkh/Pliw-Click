@@ -209,16 +209,16 @@ final class TiffyClickCoreTests: XCTestCase {
 
         let config = TiffyClickConfig(defaults: defaults)
         config.minimumFingers = 4
-        config.autoscrollMode = .holdOnly
+        config.autoscrollEnabled = false
         config.toggleIgnoredApp("com.figma.Desktop")
 
         XCTAssertEqual(config.snapshot.minimumFingers, 4)
-        XCTAssertEqual(config.snapshot.autoscrollMode, .holdOnly)
+        XCTAssertFalse(config.snapshot.autoscrollEnabled)
         XCTAssertTrue(config.snapshot.ignoredAppBundles.contains("com.figma.Desktop"))
 
         let reloaded = TiffyClickConfig(defaults: defaults)
         XCTAssertEqual(reloaded.minimumFingers, 4)
-        XCTAssertEqual(reloaded.autoscrollMode, .holdOnly)
+        XCTAssertFalse(reloaded.autoscrollEnabled)
         XCTAssertTrue(reloaded.ignoredAppBundles.contains("com.figma.Desktop"))
 
         reloaded.language = .en

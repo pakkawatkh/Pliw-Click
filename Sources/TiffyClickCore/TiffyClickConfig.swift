@@ -20,48 +20,6 @@ public enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
-public enum AutoscrollMode: String, CaseIterable, Identifiable, Sendable {
-    /// Windows Chrome/Edge style:
-    /// - Middle-click on link/tab -> normal middle click
-    /// - Middle-click on empty page -> toggle autoscroll (or hold-drag & release to stop)
-    case smart
-    /// Press & hold middle button + drag -> autoscroll; release -> stop.
-    /// Quick click without dragging -> normal middle click.
-    case holdOnly
-    /// Disable autoscroll; send standard middle click & middle drag only.
-    case off
-
-    public var id: String { rawValue }
-
-    public func displayName(lang: AppLanguage) -> String {
-        switch (self, lang) {
-        case (.smart, .th): return "Smart (แบบ Windows)"
-        case (.smart, .en): return "Smart (Windows Style)"
-        case (.holdOnly, .th): return "กดค้างแล้วเลื่อน (Hold & Drag)"
-        case (.holdOnly, .en): return "Hold & Drag Only"
-        case (.off, .th): return "ปิด (คลิกกลางปกติ)"
-        case (.off, .en): return "Off (Standard Middle Click)"
-        }
-    }
-
-    public func descriptionText(lang: AppLanguage) -> String {
-        switch (self, lang) {
-        case (.smart, .th):
-            return "คลิกกลางบนหน้าเว็บเพื่อล็อก Autoscroll หรือกดค้างแล้วเลื่อน (คลิกบนลิงก์/แท็บยังทำงานปกติ)"
-        case (.smart, .en):
-            return "Middle-click empty page areas to toggle Autoscroll or hold & move to scroll (links and browser tabs still work normally)."
-        case (.holdOnly, .th):
-            return "กดปุ่มกลางหรือคลิก 3 นิ้วค้างแล้วเลื่อนเพื่อ Scroll (ปล่อยเพื่อหยุด) คลิกสั้นๆ จะเป็นคลิกกลางปกติ"
-        case (.holdOnly, .en):
-            return "Hold middle button or 3-finger click and move to scroll (release to stop). Quick clicks behave as normal middle-click."
-        case (.off, .th):
-            return "ปิด Autoscroll — ส่งเฉพาะคลิกกลางและ Middle-Drag (เหมาะกับ Figma, Blender, CAD)"
-        case (.off, .en):
-            return "Disable Autoscroll — sends standard Middle-Click and Middle-Drag only (ideal for Figma, Blender, CAD)."
-        }
-    }
-}
-
 public enum BrowserRegistry {
     private static let exactBundleIDs: Set<String> = [
         "com.google.chrome",
@@ -106,7 +64,7 @@ public struct ConfigSnapshot: Sendable, Equatable {
     public var maxTapDurationSec: TimeInterval
     public var maxTapDistance: Float
     public var palmRejectionMargin: Float
-    public var autoscrollMode: AutoscrollMode
+    public var autoscrollEnabled: Bool
     public var autoscrollBrowsersOnly: Bool
     public var autoscrollForPhysicalMouse: Bool
     public var autoscrollSpeed: Double
@@ -125,7 +83,7 @@ public struct ConfigSnapshot: Sendable, Equatable {
         maxTapDurationSec: TimeInterval = 0.30,
         maxTapDistance: Float = 0.05,
         palmRejectionMargin: Float = 0.04,
-        autoscrollMode: AutoscrollMode = .smart,
+        autoscrollEnabled: Bool = true,
         autoscrollBrowsersOnly: Bool = true,
         autoscrollForPhysicalMouse: Bool = true,
         autoscrollSpeed: Double = 1.0,
@@ -143,7 +101,7 @@ public struct ConfigSnapshot: Sendable, Equatable {
         self.maxTapDurationSec = maxTapDurationSec
         self.maxTapDistance = maxTapDistance
         self.palmRejectionMargin = palmRejectionMargin
-        self.autoscrollMode = autoscrollMode
+        self.autoscrollEnabled = autoscrollEnabled
         self.autoscrollBrowsersOnly = autoscrollBrowsersOnly
         self.autoscrollForPhysicalMouse = autoscrollForPhysicalMouse
         self.autoscrollSpeed = autoscrollSpeed
@@ -172,7 +130,8 @@ public final class TiffyClickConfig: ObservableObject {
         static let maxTapDurationMs = "maxTapDurationMs"
         static let maxTapDistance = "maxTapDistance"
         static let palmRejectionMargin = "palmRejectionMargin"
-        static let autoscrollMode = "autoscrollMode"
+        static let autoscrollEnabled = "autoscrollEnabled"
+        static let legacyAutoscrollMode = "autoscrollMode"
         static let autoscrollBrowsersOnly = "autoscrollBrowsersOnly"
         static let autoscrollForPhysicalMouse = "autoscrollForPhysicalMouse"
         static let autoscrollSpeed = "autoscrollSpeed"
@@ -192,7 +151,7 @@ public final class TiffyClickConfig: ObservableObject {
     @Published public var maxTapDurationMs: Double { didSet { saveAndSync() } }
     @Published public var maxTapDistance: Float { didSet { saveAndSync() } }
     @Published public var palmRejectionMargin: Float { didSet { saveAndSync() } }
-    @Published public var autoscrollMode: AutoscrollMode { didSet { saveAndSync() } }
+    @Published public var autoscrollEnabled: Bool { didSet { saveAndSync() } }
     @Published public var autoscrollBrowsersOnly: Bool { didSet { saveAndSync() } }
     @Published public var autoscrollForPhysicalMouse: Bool { didSet { saveAndSync() } }
     @Published public var autoscrollSpeed: Double { didSet { saveAndSync() } }
@@ -223,8 +182,14 @@ public final class TiffyClickConfig: ObservableObject {
         let tapDur = defaults.object(forKey: Keys.maxTapDurationMs) as? Double ?? 300.0
         let tapDist = defaults.object(forKey: Keys.maxTapDistance) as? Float ?? 0.05
         let palm = defaults.object(forKey: Keys.palmRejectionMargin) as? Float ?? 0.04
-        let modeRaw = defaults.string(forKey: Keys.autoscrollMode) ?? AutoscrollMode.smart.rawValue
-        let mode = AutoscrollMode(rawValue: modeRaw) ?? .smart
+        let autoEnabled: Bool
+        if let saved = defaults.object(forKey: Keys.autoscrollEnabled) as? Bool {
+            autoEnabled = saved
+        } else if let legacy = defaults.string(forKey: Keys.legacyAutoscrollMode) {
+            autoEnabled = legacy != "off"
+        } else {
+            autoEnabled = true
+        }
         let browsersOnly = defaults.object(forKey: Keys.autoscrollBrowsersOnly) as? Bool ?? true
         let physMouse = defaults.object(forKey: Keys.autoscrollForPhysicalMouse) as? Bool ?? true
         let speed = defaults.object(forKey: Keys.autoscrollSpeed) as? Double ?? 1.0
@@ -243,7 +208,7 @@ public final class TiffyClickConfig: ObservableObject {
         self.maxTapDurationMs = tapDur
         self.maxTapDistance = tapDist
         self.palmRejectionMargin = palm
-        self.autoscrollMode = mode
+        self.autoscrollEnabled = autoEnabled
         self.autoscrollBrowsersOnly = browsersOnly
         self.autoscrollForPhysicalMouse = physMouse
         self.autoscrollSpeed = speed
@@ -262,7 +227,7 @@ public final class TiffyClickConfig: ObservableObject {
             maxTapDurationSec: tapDur / 1000.0,
             maxTapDistance: tapDist,
             palmRejectionMargin: palm,
-            autoscrollMode: mode,
+            autoscrollEnabled: autoEnabled,
             autoscrollBrowsersOnly: browsersOnly,
             autoscrollForPhysicalMouse: physMouse,
             autoscrollSpeed: speed,
@@ -309,7 +274,7 @@ public final class TiffyClickConfig: ObservableObject {
         maxTapDurationMs = 300.0
         maxTapDistance = 0.05
         palmRejectionMargin = 0.04
-        autoscrollMode = .smart
+        autoscrollEnabled = true
         autoscrollBrowsersOnly = true
         autoscrollForPhysicalMouse = true
         autoscrollSpeed = 1.0
@@ -328,7 +293,7 @@ public final class TiffyClickConfig: ObservableObject {
         defaults.set(maxTapDurationMs, forKey: Keys.maxTapDurationMs)
         defaults.set(maxTapDistance, forKey: Keys.maxTapDistance)
         defaults.set(palmRejectionMargin, forKey: Keys.palmRejectionMargin)
-        defaults.set(autoscrollMode.rawValue, forKey: Keys.autoscrollMode)
+        defaults.set(autoscrollEnabled, forKey: Keys.autoscrollEnabled)
         defaults.set(autoscrollBrowsersOnly, forKey: Keys.autoscrollBrowsersOnly)
         defaults.set(autoscrollForPhysicalMouse, forKey: Keys.autoscrollForPhysicalMouse)
         defaults.set(autoscrollSpeed, forKey: Keys.autoscrollSpeed)
@@ -347,7 +312,7 @@ public final class TiffyClickConfig: ObservableObject {
             maxTapDurationSec: maxTapDurationMs / 1000.0,
             maxTapDistance: maxTapDistance,
             palmRejectionMargin: palmRejectionMargin,
-            autoscrollMode: autoscrollMode,
+            autoscrollEnabled: autoscrollEnabled,
             autoscrollBrowsersOnly: autoscrollBrowsersOnly,
             autoscrollForPhysicalMouse: autoscrollForPhysicalMouse,
             autoscrollSpeed: autoscrollSpeed,

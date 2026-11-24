@@ -16,12 +16,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var permissionStatusItem: NSMenuItem!
     private var permissionActionItem: NSMenuItem!
     private var enabledItem: NSMenuItem!
-    private var modeHeaderItem: NSMenuItem!
+    private var autoscrollToggleItem: NSMenuItem!
     private var ignoreAppItem: NSMenuItem!
     private var ignoreAutoscrollItem: NSMenuItem!
-    private var smartModeItem: NSMenuItem!
-    private var holdModeItem: NSMenuItem!
-    private var offModeItem: NSMenuItem!
     private var fingersMenuItem: NSMenuItem!
     private var fingerOptionItems: [Int: NSMenuItem] = [:]
     private var allowMoreFingersItem: NSMenuItem!
@@ -80,17 +77,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         enabledItem = menu.addItem(withTitle: "", action: #selector(toggleEnabled), keyEquivalent: "")
         enabledItem.target = self
-        menu.addItem(.separator())
 
-        modeHeaderItem = menu.addItem(withTitle: "", action: nil, keyEquivalent: "")
-        modeHeaderItem.isEnabled = false
-
-        smartModeItem = menu.addItem(withTitle: "", action: #selector(selectSmartMode), keyEquivalent: "")
-        smartModeItem.target = self
-        holdModeItem = menu.addItem(withTitle: "", action: #selector(selectHoldMode), keyEquivalent: "")
-        holdModeItem.target = self
-        offModeItem = menu.addItem(withTitle: "", action: #selector(selectOffMode), keyEquivalent: "")
-        offModeItem.target = self
+        autoscrollToggleItem = menu.addItem(withTitle: "", action: #selector(toggleAutoscroll), keyEquivalent: "")
+        autoscrollToggleItem.target = self
         menu.addItem(.separator())
 
         tapToClickItem = menu.addItem(withTitle: "", action: #selector(toggleTapToClick), keyEquivalent: "")
@@ -152,10 +141,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         permissionStatusItem.title = L10n.t("⚠️ ยังไม่ได้อนุญาต Accessibility", "⚠️ Missing Accessibility Permission", lang: lang)
         permissionActionItem.title = L10n.t("เปิดการตั้งค่า Accessibility...", "Open Accessibility Settings...", lang: lang)
         enabledItem.title = L10n.t("เปิดใช้งาน tiffy-click", "Enable tiffy-click", lang: lang)
-        modeHeaderItem.title = L10n.t("โหมด Autoscroll (Hold Scroll)", "Autoscroll Mode (Hold Scroll)", lang: lang)
-        smartModeItem.title = "  " + AutoscrollMode.smart.displayName(lang: lang)
-        holdModeItem.title = "  " + AutoscrollMode.holdOnly.displayName(lang: lang)
-        offModeItem.title = "  " + AutoscrollMode.off.displayName(lang: lang)
+        autoscrollToggleItem.title = L10n.t("Autoscroll (Hold Scroll)", "Autoscroll (Hold Scroll)", lang: lang)
         tapToClickItem.title = L10n.t("Tap \(config.minimumFingers) นิ้วเพื่อคลิกกลาง", "Tap \(config.minimumFingers) Fingers to Middle Click", lang: lang)
         let plusSuffix = config.allowMoreFingers ? "+" : ""
         fingersMenuItem.title = L10n.t("จำนวนนิ้ว: \(config.minimumFingers)\(plusSuffix) นิ้ว", "Finger Count: \(config.minimumFingers)\(plusSuffix) Fingers", lang: lang)
@@ -186,9 +172,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         refreshLocalizedMenuTitles()
 
         enabledItem.state = config.isEnabled ? .on : .off
-        smartModeItem.state = config.autoscrollMode == .smart ? .on : .off
-        holdModeItem.state = config.autoscrollMode == .holdOnly ? .on : .off
-        offModeItem.state = config.autoscrollMode == .off ? .on : .off
+        autoscrollToggleItem.state = config.autoscrollEnabled ? .on : .off
 
         tapToClickItem.state = config.tapToClick ? .on : .off
         launchAtLoginItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
@@ -220,16 +204,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         config.isEnabled.toggle()
     }
 
-    @objc private func selectSmartMode() {
-        config.autoscrollMode = .smart
-    }
-
-    @objc private func selectHoldMode() {
-        config.autoscrollMode = .holdOnly
-    }
-
-    @objc private func selectOffMode() {
-        config.autoscrollMode = .off
+    @objc private func toggleAutoscroll() {
+        config.autoscrollEnabled.toggle()
     }
 
     @objc private func selectThai() {
