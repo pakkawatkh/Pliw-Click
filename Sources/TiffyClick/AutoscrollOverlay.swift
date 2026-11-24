@@ -39,6 +39,44 @@ private struct LiquidGlassBackdrop: NSViewRepresentable {
     }
 }
 
+/// Sculpted Apple-style navigation pointer pointing upward by default (rotated 360° toward cursor).
+private struct SculptedArrowShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let w = rect.width
+        let h = rect.height
+        var p = Path()
+
+        // Smooth rounded tip at top center, sweeping wings, and subtle concave tail notch
+        p.move(to: CGPoint(x: w * 0.50, y: h * 0.06))
+        p.addQuadCurve(
+            to: CGPoint(x: w * 0.88, y: h * 0.86),
+            control: CGPoint(x: w * 0.72, y: h * 0.44)
+        )
+        p.addQuadCurve(
+            to: CGPoint(x: w * 0.76, y: h * 0.92),
+            control: CGPoint(x: w * 0.86, y: h * 0.94)
+        )
+        p.addQuadCurve(
+            to: CGPoint(x: w * 0.50, y: h * 0.72),
+            control: CGPoint(x: w * 0.62, y: h * 0.78)
+        )
+        p.addQuadCurve(
+            to: CGPoint(x: w * 0.24, y: h * 0.92),
+            control: CGPoint(x: w * 0.38, y: h * 0.78)
+        )
+        p.addQuadCurve(
+            to: CGPoint(x: w * 0.12, y: h * 0.86),
+            control: CGPoint(x: w * 0.14, y: h * 0.94)
+        )
+        p.addQuadCurve(
+            to: CGPoint(x: w * 0.50, y: h * 0.06),
+            control: CGPoint(x: w * 0.28, y: h * 0.44)
+        )
+        p.closeSubpath()
+        return p
+    }
+}
+
 private struct AutoscrollBadgeView: View {
     @ObservedObject var model: AutoscrollOverlayModel
     @Environment(\.colorScheme) private var colorScheme
@@ -49,20 +87,10 @@ private struct AutoscrollBadgeView: View {
         model.activeAngle != nil
     }
 
-    private var dotOffset: CGSize {
-        guard let angle = model.activeAngle else { return .zero }
-        let shift: CGFloat = 1.6
-        return CGSize(width: CGFloat(cos(angle)) * shift, height: CGFloat(sin(angle)) * shift)
-    }
-
     private var arrowOffset: CGSize {
         guard let angle = model.activeAngle else { return .zero }
-        let radius: CGFloat = 8.8
-        return CGSize(width: CGFloat(cos(angle)) * radius, height: CGFloat(sin(angle)) * radius)
-    }
-
-    private var activeGlowColor: Color {
-        Color.accentColor
+        let shift: CGFloat = 2.0
+        return CGSize(width: CGFloat(cos(angle)) * shift, height: CGFloat(sin(angle)) * shift)
     }
 
     var body: some View {
@@ -130,33 +158,35 @@ private struct AutoscrollBadgeView: View {
                 .stroke(Color.black.opacity(colorScheme == .dark ? 0.45 : 0.14), lineWidth: 0.5)
                 .frame(width: orbSize + 0.5, height: orbSize + 0.5)
 
-            // 7. Minimal center dot
-            Circle()
-                .fill(
-                    isScrolling
-                        ? activeGlowColor
-                        : (colorScheme == .dark ? Color.white.opacity(0.88) : Color.black.opacity(0.72))
-                )
-                .frame(width: 4.2, height: 4.2)
-                .shadow(color: isScrolling ? activeGlowColor.opacity(0.6) : .clear, radius: 3)
-                .offset(dotOffset)
-
-            // 8. Single 360° orbiting chevron pointing directly toward the cursor
+            // 7. Sculpted single 360° pointer arrow (no center dot!)
             if let angle = model.activeAngle {
-                Image(systemName: "chevron.up")
-                    .font(.system(size: 6.8, weight: .bold))
-                    .foregroundColor(activeGlowColor)
-                    .shadow(color: activeGlowColor.opacity(0.55), radius: 2.5)
+                SculptedArrowShape()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.22, green: 0.74, blue: 0.98),
+                                Color.accentColor
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .overlay(
+                        SculptedArrowShape()
+                            .stroke(Color.white.opacity(0.55), lineWidth: 0.5)
+                    )
+                    .frame(width: 11.5, height: 11.5)
+                    .shadow(color: Color.accentColor.opacity(0.45), radius: 3, x: 0, y: 1)
                     .rotationEffect(.radians(angle + .pi / 2))
                     .offset(arrowOffset)
-                    .transition(.opacity.combined(with: .scale(scale: 0.6)))
+                    .transition(.opacity.combined(with: .scale(scale: 0.55)))
             }
         }
         .frame(width: 54, height: 54)
         .scaleEffect(model.isVisible ? 1.0 : 0.75)
         .opacity(model.isVisible ? 1.0 : 0.0)
         .animation(.spring(response: 0.18, dampingFraction: 0.76), value: model.isVisible)
-        .animation(.easeOut(duration: 0.10), value: isScrolling)
+        .animation(.easeOut(duration: 0.12), value: isScrolling)
     }
 }
 
