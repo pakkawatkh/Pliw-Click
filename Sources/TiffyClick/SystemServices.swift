@@ -54,11 +54,31 @@ enum SystemPermissions {
         return AppInspector.frontmostBundleID()
     }
 
+    /// Returns true if the current macOS system cursor is the pointing-hand cursor
+    /// (shown by browsers whenever hovering over links, clickable cards, or interactive buttons).
+    static func isPointingHandCursor() -> Bool {
+        guard let current = NSCursor.currentSystem else { return false }
+        let hand = NSCursor.pointingHand
+        if current == hand { return true }
+        if current.hotSpot == hand.hotSpot,
+           let curData = current.image.tiffRepresentation,
+           let handData = hand.image.tiffRepresentation,
+           curData == handData {
+            return true
+        }
+        return false
+    }
+
     /// Determines whether Autoscroll should activate at `cgPoint`.
     /// When `browsersOnly` is true (default), Autoscroll activates ONLY on empty webpage areas
     /// inside a web browser — everywhere else (desktop, non-browser apps, browser tabs/toolbars,
-    /// links, buttons, text inputs) behaves as a normal middle click.
+    /// links, buttons, text inputs, or pointing-hand hover targets) behaves as a normal middle click.
     static func canActivateAutoscroll(at cgPoint: CGPoint, bundleID: String?, browsersOnly: Bool) -> Bool {
+        // Never hijack pointing-hand targets (links, buttons, clickable thumbnails/cards)
+        if isPointingHandCursor() {
+            return false
+        }
+
         let targetBundleID = bundleIDAtCursor(cgPoint) ?? bundleID
         if browsersOnly {
             guard BrowserRegistry.isBrowser(bundleID: targetBundleID) else {
@@ -156,6 +176,9 @@ enum SystemPermissions {
                 if role != "AXWebArea" && hasAttribute(current, "AXURL") {
                     return false
                 }
+                if role != "AXWebArea" && role != "AXWindow" && role != "AXScrollArea" && hasAction(current, kAXPressAction) {
+                    return false
+                }
             }
 
             if role == "AXWebArea" {
@@ -209,6 +232,15 @@ enum SystemPermissions {
     private static func hasAttribute(_ element: AXUIElement, _ attribute: String) -> Bool {
         var value: CFTypeRef?
         return AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success && value != nil
+    }
+
+    private static func hasAction(_ element: AXUIElement, _ action: String) -> Bool {
+        var actionsRef: CFArray?
+        guard AXUIElementCopyActionNames(element, &actionsRef) == .success,
+              let actions = actionsRef as? [String] else {
+            return false
+        }
+        return actions.contains(action)
     }
 
     private static func axParent(of element: AXUIElement) -> AXUIElement? {
