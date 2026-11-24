@@ -353,7 +353,7 @@ private struct AboutSettingsTab: View {
 
             Spacer()
 
-            Text("Inspired by artginzburg/MiddleClick • GPL-3.0")
+            Text("© 2026 Pakkawat.k • Open Source (MIT)")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
                 .padding(.bottom, 8)

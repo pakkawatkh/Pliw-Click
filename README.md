@@ -2,9 +2,9 @@
 
 **Middle-Click, Middle-Drag & macOS Liquid Glass Browser Autoscroll**
 
-[![Version](https://img.shields.io/badge/Release-v1.2.0-06b6d4?style=for-the-badge)](https://pakkawatkh.github.io/tiffy-app/tiffy-click/)
+[![Version](https://img.shields.io/badge/Release-v1.2.1-06b6d4?style=for-the-badge)](https://pakkawatkh.github.io/tiffy-app/tiffy-click/)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B-lightgrey?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/Tiffy-Click)
-[![License](https://img.shields.io/badge/License-GPL--3.0-blue?style=for-the-badge)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
 `Tiffy Click` brings Windows-style smooth **Browser Autoscroll** (with a compact `28pt` Apple Liquid Glass 360° orb) plus 2–10 finger Trackpad / Magic Mouse **Middle-Click, Tap & Middle-Drag** to macOS 13.0+.
 
@@ -52,6 +52,6 @@ swift test
 ./scripts/create_dmg.sh
 ```
 
-## 📜 License & Credits
+## 📄 License
 
-Licensed under **GPL-3.0**. Inspired by [artginzburg/MiddleClick](https://github.com/artginzburg/MiddleClick).
+Open Source — Licensed under the **[MIT License](LICENSE)**. Copyright © 2026 Pakkawat.k.
