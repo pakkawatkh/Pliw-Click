@@ -52,7 +52,11 @@ echo "🗜️ Creating ZIP archive for in-app updates: ${ZIP_OUTPUT}..."
 rm -f "${ZIP_OUTPUT}"
 ditto -c -k --keepParent "${PROJECT_DIR}/Pliw Click.app" "${ZIP_OUTPUT}"
 
-PLIW_PORTAL_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/Pliw-App/pliw-click"
+if [ -f "$(cd "${PROJECT_DIR}/../.." && pwd)/index.html" ]; then
+    PLIW_PORTAL_DIR="$(cd "${PROJECT_DIR}/../.." && pwd)/pliw-click"
+else
+    PLIW_PORTAL_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/Pliw-App/pliw-click"
+fi
 mkdir -p "${PLIW_PORTAL_DIR}"
 echo "📦 Syncing DMG and ZIP to ${PLIW_PORTAL_DIR}..."
 cp -f "${DMG_OUTPUT}" "${PLIW_PORTAL_DIR}/pliw-click-Installer.dmg"

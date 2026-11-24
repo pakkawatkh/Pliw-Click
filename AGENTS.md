@@ -10,7 +10,7 @@
 - **Bundle Identifier:** `com.local.pliw-click` *(never change — preserves macOS Accessibility TCC permissions and `UserDefaults`)*
 - **Platform:** Native macOS 13.0+ (Apple Silicon & Intel), Swift 5.9+, SwiftUI, AppKit, CoreGraphics (`CGEventTap`), IOKit, `MultitouchSupport.framework`
 - **License:** Open Source — MIT License
-- **Release Portal:** `../Pliw-App/pliw-click/` → Live at `https://pakkawatkh.github.io/Pliw-App/pliw-click/`
+- **Release Portal:** `../../pliw-click/` → Live at `https://pakkawatkh.github.io/Pliw-App/pliw-click/`
 - **Auto-Update Manifest:** `https://pakkawatkh.github.io/Pliw-App/pliw-click/version.json`
 
 ### Key Modules
@@ -46,14 +46,14 @@ Never stop after editing code. Complete every step below in one pass:
    ```bash
    ./scripts/create_dmg.sh
    ```
-   This builds Release `Pliw Click.app`, signs it, installs `/Applications/Pliw Click.app`, creates `pliw-click-Installer.dmg` + `pliw-click.zip`, and syncs them to `../Pliw-App/pliw-click/`.
-4. **Update Release Portal (`../Pliw-App`):**
-   - Update `../Pliw-App/pliw-click/version.json` (`latestVersion`, `releaseNotes`, `publishedAt`).
-   - Update version and exact DMG/ZIP sizes in `../Pliw-App/index.html`, `../Pliw-App/pliw-click/index.html`, `../Pliw-App/README.md`, and `./README.md`.
-   - Follow `../Pliw-App/AGENTS.md` (100% English, minimal copy).
+   This builds Release `Pliw Click.app`, signs it, installs `/Applications/Pliw Click.app`, creates `pliw-click-Installer.dmg` + `pliw-click.zip`, and syncs them to `../../pliw-click/`.
+4. **Update Release Portal (`../..`):**
+   - Update `../../pliw-click/version.json` (`latestVersion`, `releaseNotes`, `publishedAt`).
+   - Update version and exact DMG/ZIP sizes in `../../index.html`, `../../pliw-click/index.html`, `../../README.md`, and `./README.md`.
+   - Follow `../../AGENTS.md` (100% English, minimal copy).
 5. **Commit, push both repositories, and relaunch:**
    ```bash
    git add -A && git commit -m "chore: release vX.Y.Z - <summary>" && git push origin main
-   cd ../Pliw-App && git add -A && git commit -m "chore(release): Pliw Click vX.Y.Z" && git push origin main
+   cd ../.. && git add -A && git commit -m "chore(release): Pliw Click vX.Y.Z" && git push origin main
    open "/Applications/Pliw Click.app"
    ```
