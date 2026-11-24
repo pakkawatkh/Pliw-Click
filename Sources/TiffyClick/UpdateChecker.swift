@@ -258,7 +258,7 @@ final class UpdateChecker: ObservableObject {
     @Published var statusMessage: String = ""
     @Published var availableRelease: ReleaseMetadata?
 
-    static let versionURL = URL(string: "https://pakkawatkh.github.io/tiffy-app/tiffy-click/version.json")!
+    static let versionURL = URL(string: "https://pakkawatkh.github.io/Tiffy-App/tiffy-click/version.json")!
 
     private let toast = UpdateToastController()
 

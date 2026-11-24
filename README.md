@@ -2,15 +2,15 @@
 
 **Middle-Click, Middle-Drag & macOS Liquid Glass Browser Autoscroll**
 
-[![Version](https://img.shields.io/badge/Release-v1.2.1-06b6d4?style=for-the-badge)](https://pakkawatkh.github.io/tiffy-app/tiffy-click/)
+[![Version](https://img.shields.io/badge/Release-v1.2.2-06b6d4?style=for-the-badge)](https://pakkawatkh.github.io/Tiffy-App/tiffy-click/)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B-lightgrey?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/Tiffy-Click)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
 `Tiffy Click` brings Windows-style smooth **Browser Autoscroll** (with a compact `28pt` Apple Liquid Glass 360° orb) plus 2–10 finger Trackpad / Magic Mouse **Middle-Click, Tap & Middle-Drag** to macOS 13.0+.
 
-- 🌐 **Live Website & Interactive Preview:** https://pakkawatkh.github.io/tiffy-app/tiffy-click/
-- 📥 **Direct Download (DMG · 2.1 MB):** https://pakkawatkh.github.io/tiffy-app/tiffy-click/tiffy-click-Installer.dmg
-- 🗜️ **ZIP Archive (1.7 MB):** https://pakkawatkh.github.io/tiffy-app/tiffy-click/tiffy-click.zip
+- 🌐 **Live Website & Interactive Preview:** https://pakkawatkh.github.io/Tiffy-App/tiffy-click/
+- 📥 **Direct Download (DMG · 2.1 MB):** https://pakkawatkh.github.io/Tiffy-App/tiffy-click/tiffy-click-Installer.dmg
+- 🗜️ **ZIP Archive (1.7 MB):** https://pakkawatkh.github.io/Tiffy-App/tiffy-click/tiffy-click.zip
 
 ---
 
