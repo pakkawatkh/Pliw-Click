@@ -145,8 +145,8 @@ final class InputController {
                 engine.forceStop()
                 return
             }
-            // In Smart mode, tapping on non-link empty page toggles Autoscroll!
-            let swallowedDown = engine.handleMiddleDown(at: location, config: config)
+            // In Smart mode, tapping on scrollable empty browser area toggles Autoscroll!
+            let swallowedDown = engine.handleMiddleDown(at: location, bundleID: frontmost, config: config)
             if swallowedDown {
                 _ = engine.handleMiddleUp(at: location, config: config)
                 return
@@ -290,7 +290,7 @@ final class InputController {
             stateLock.unlock()
 
             if fingersReady {
-                if autoscrollAllowed && autoscrollEngine.handleMiddleDown(at: event.location, config: config) {
+                if autoscrollAllowed && autoscrollEngine.handleMiddleDown(at: event.location, bundleID: frontmost, config: config) {
                     return nil
                 }
                 event.type = .otherMouseDown
@@ -347,7 +347,7 @@ final class InputController {
             if button == Self.kCenterButton {
                 switch type {
                 case .otherMouseDown:
-                    if autoscrollEngine.handleMiddleDown(at: event.location, config: config) {
+                    if autoscrollEngine.handleMiddleDown(at: event.location, bundleID: frontmost, config: config) {
                         return nil
                     }
                 case .otherMouseDragged:

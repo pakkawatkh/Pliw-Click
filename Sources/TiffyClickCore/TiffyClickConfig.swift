@@ -62,6 +62,41 @@ public enum AutoscrollMode: String, CaseIterable, Identifiable, Sendable {
     }
 }
 
+public enum BrowserRegistry {
+    private static let exactBundleIDs: Set<String> = [
+        "com.google.chrome",
+        "com.google.chrome.canary",
+        "com.google.chrome.beta",
+        "com.google.chrome.dev",
+        "com.apple.safari",
+        "com.apple.safaritechnologypreview",
+        "company.thebrowser.browser",
+        "company.thebrowser.dia",
+        "com.brave.browser",
+        "com.brave.browser.beta",
+        "com.brave.browser.nightly",
+        "com.microsoft.edgemac",
+        "com.microsoft.edgemac.beta",
+        "com.microsoft.edgemac.dev",
+        "com.microsoft.edgemac.canary",
+        "org.mozilla.firefox",
+        "org.mozilla.firefoxdeveloperedition",
+        "org.mozilla.nightly",
+        "app.zen-browser.zen",
+        "com.operasoftware.opera",
+        "com.operasoftware.operagx",
+        "com.vivaldi.vivaldi",
+        "com.kagi.kagimacos",
+        "org.chromium.chromium",
+        "com.sigmaos.sigmaos.macos"
+    ]
+
+    public static func isBrowser(bundleID: String?) -> Bool {
+        guard let id = bundleID?.lowercased(), !id.isEmpty else { return false }
+        return exactBundleIDs.contains(id)
+    }
+}
+
 /// Immutable thread-safe snapshot read from high-frequency CGEventTap & Multitouch callbacks.
 public struct ConfigSnapshot: Sendable, Equatable {
     public var isEnabled: Bool
@@ -72,6 +107,7 @@ public struct ConfigSnapshot: Sendable, Equatable {
     public var maxTapDistance: Float
     public var palmRejectionMargin: Float
     public var autoscrollMode: AutoscrollMode
+    public var autoscrollBrowsersOnly: Bool
     public var autoscrollForPhysicalMouse: Bool
     public var autoscrollSpeed: Double
     public var autoscrollDeadzone: Double
@@ -90,6 +126,7 @@ public struct ConfigSnapshot: Sendable, Equatable {
         maxTapDistance: Float = 0.05,
         palmRejectionMargin: Float = 0.04,
         autoscrollMode: AutoscrollMode = .smart,
+        autoscrollBrowsersOnly: Bool = true,
         autoscrollForPhysicalMouse: Bool = true,
         autoscrollSpeed: Double = 1.0,
         autoscrollDeadzone: Double = 14.0,
@@ -107,6 +144,7 @@ public struct ConfigSnapshot: Sendable, Equatable {
         self.maxTapDistance = maxTapDistance
         self.palmRejectionMargin = palmRejectionMargin
         self.autoscrollMode = autoscrollMode
+        self.autoscrollBrowsersOnly = autoscrollBrowsersOnly
         self.autoscrollForPhysicalMouse = autoscrollForPhysicalMouse
         self.autoscrollSpeed = autoscrollSpeed
         self.autoscrollDeadzone = autoscrollDeadzone
@@ -135,6 +173,7 @@ public final class TiffyClickConfig: ObservableObject {
         static let maxTapDistance = "maxTapDistance"
         static let palmRejectionMargin = "palmRejectionMargin"
         static let autoscrollMode = "autoscrollMode"
+        static let autoscrollBrowsersOnly = "autoscrollBrowsersOnly"
         static let autoscrollForPhysicalMouse = "autoscrollForPhysicalMouse"
         static let autoscrollSpeed = "autoscrollSpeed"
         static let autoscrollDeadzone = "autoscrollDeadzone"
@@ -154,6 +193,7 @@ public final class TiffyClickConfig: ObservableObject {
     @Published public var maxTapDistance: Float { didSet { saveAndSync() } }
     @Published public var palmRejectionMargin: Float { didSet { saveAndSync() } }
     @Published public var autoscrollMode: AutoscrollMode { didSet { saveAndSync() } }
+    @Published public var autoscrollBrowsersOnly: Bool { didSet { saveAndSync() } }
     @Published public var autoscrollForPhysicalMouse: Bool { didSet { saveAndSync() } }
     @Published public var autoscrollSpeed: Double { didSet { saveAndSync() } }
     @Published public var autoscrollDeadzone: Double { didSet { saveAndSync() } }
@@ -185,6 +225,7 @@ public final class TiffyClickConfig: ObservableObject {
         let palm = defaults.object(forKey: Keys.palmRejectionMargin) as? Float ?? 0.04
         let modeRaw = defaults.string(forKey: Keys.autoscrollMode) ?? AutoscrollMode.smart.rawValue
         let mode = AutoscrollMode(rawValue: modeRaw) ?? .smart
+        let browsersOnly = defaults.object(forKey: Keys.autoscrollBrowsersOnly) as? Bool ?? true
         let physMouse = defaults.object(forKey: Keys.autoscrollForPhysicalMouse) as? Bool ?? true
         let speed = defaults.object(forKey: Keys.autoscrollSpeed) as? Double ?? 1.0
         let deadzone = defaults.object(forKey: Keys.autoscrollDeadzone) as? Double ?? 14.0
@@ -203,6 +244,7 @@ public final class TiffyClickConfig: ObservableObject {
         self.maxTapDistance = tapDist
         self.palmRejectionMargin = palm
         self.autoscrollMode = mode
+        self.autoscrollBrowsersOnly = browsersOnly
         self.autoscrollForPhysicalMouse = physMouse
         self.autoscrollSpeed = speed
         self.autoscrollDeadzone = deadzone
@@ -221,6 +263,7 @@ public final class TiffyClickConfig: ObservableObject {
             maxTapDistance: tapDist,
             palmRejectionMargin: palm,
             autoscrollMode: mode,
+            autoscrollBrowsersOnly: browsersOnly,
             autoscrollForPhysicalMouse: physMouse,
             autoscrollSpeed: speed,
             autoscrollDeadzone: deadzone,
@@ -267,6 +310,7 @@ public final class TiffyClickConfig: ObservableObject {
         maxTapDistance = 0.05
         palmRejectionMargin = 0.04
         autoscrollMode = .smart
+        autoscrollBrowsersOnly = true
         autoscrollForPhysicalMouse = true
         autoscrollSpeed = 1.0
         autoscrollDeadzone = 14.0
@@ -285,6 +329,7 @@ public final class TiffyClickConfig: ObservableObject {
         defaults.set(maxTapDistance, forKey: Keys.maxTapDistance)
         defaults.set(palmRejectionMargin, forKey: Keys.palmRejectionMargin)
         defaults.set(autoscrollMode.rawValue, forKey: Keys.autoscrollMode)
+        defaults.set(autoscrollBrowsersOnly, forKey: Keys.autoscrollBrowsersOnly)
         defaults.set(autoscrollForPhysicalMouse, forKey: Keys.autoscrollForPhysicalMouse)
         defaults.set(autoscrollSpeed, forKey: Keys.autoscrollSpeed)
         defaults.set(autoscrollDeadzone, forKey: Keys.autoscrollDeadzone)
@@ -303,6 +348,7 @@ public final class TiffyClickConfig: ObservableObject {
             maxTapDistance: maxTapDistance,
             palmRejectionMargin: palmRejectionMargin,
             autoscrollMode: autoscrollMode,
+            autoscrollBrowsersOnly: autoscrollBrowsersOnly,
             autoscrollForPhysicalMouse: autoscrollForPhysicalMouse,
             autoscrollSpeed: autoscrollSpeed,
             autoscrollDeadzone: autoscrollDeadzone,

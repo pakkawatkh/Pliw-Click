@@ -86,6 +86,19 @@ private struct AutoscrollSettingsTab: View {
                     .foregroundColor(.secondary)
 
                 Toggle(
+                    L10n.t("ทำงานเฉพาะพื้นที่ว่างที่เลื่อนได้ในเบราว์เซอร์ (แนะนำ)", "Only on Scrollable Empty Areas in Browsers (Recommended)", lang: lang),
+                    isOn: $config.autoscrollBrowsersOnly
+                )
+
+                Text(L10n.t(
+                    "จุดอื่นๆ นอกเบราว์เซอร์ หรือบนลิงก์/แท็บ จะทำงานเป็นปุ่มกลางปกติ 100%",
+                    "Outside browsers or on links/tabs/inputs, middle-click behaves normally.",
+                    lang: lang
+                ))
+                .font(.caption)
+                .foregroundColor(.secondary)
+
+                Toggle(
                     L10n.t("ใช้งานกับปุ่มกลางของเมาส์จริงด้วย (Physical Mouse)", "Enable for Physical Mouse Middle Button", lang: lang),
                     isOn: $config.autoscrollForPhysicalMouse
                 )

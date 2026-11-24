@@ -206,7 +206,21 @@ final class TiffyClickCoreTests: XCTestCase {
         reloaded.language = .en
         let reloadedLang = TiffyClickConfig(defaults: defaults)
         XCTAssertEqual(reloadedLang.language, .en)
+        XCTAssertTrue(reloadedLang.autoscrollBrowsersOnly)
         XCTAssertEqual(L10n.t("ไทย", "English", lang: .th), "ไทย")
         XCTAssertEqual(L10n.t("ไทย", "English", lang: .en), "English")
+    }
+
+    func testBrowserRegistryRecognizesBrowsersOnly() {
+        XCTAssertTrue(BrowserRegistry.isBrowser(bundleID: "com.google.Chrome"))
+        XCTAssertTrue(BrowserRegistry.isBrowser(bundleID: "com.apple.Safari"))
+        XCTAssertTrue(BrowserRegistry.isBrowser(bundleID: "company.thebrowser.Browser"))
+        XCTAssertTrue(BrowserRegistry.isBrowser(bundleID: "com.brave.Browser"))
+        XCTAssertTrue(BrowserRegistry.isBrowser(bundleID: "com.microsoft.edgemac"))
+        XCTAssertTrue(BrowserRegistry.isBrowser(bundleID: "org.mozilla.firefox"))
+        XCTAssertFalse(BrowserRegistry.isBrowser(bundleID: "com.microsoft.VSCode"))
+        XCTAssertFalse(BrowserRegistry.isBrowser(bundleID: "com.figma.Desktop"))
+        XCTAssertFalse(BrowserRegistry.isBrowser(bundleID: "com.apple.finder"))
+        XCTAssertFalse(BrowserRegistry.isBrowser(bundleID: nil))
     }
 }

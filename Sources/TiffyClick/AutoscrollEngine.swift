@@ -41,7 +41,7 @@ final class AutoscrollEngine {
     }
 
     /// Handles a middle mouse down event. Returns `true` if the event should be swallowed.
-    func handleMiddleDown(at location: CGPoint, config: ConfigSnapshot) -> Bool {
+    func handleMiddleDown(at location: CGPoint, bundleID: String?, config: ConfigSnapshot) -> Bool {
         guard config.autoscrollMode != .off else { return false }
 
         lock.lock()
@@ -55,14 +55,18 @@ final class AutoscrollEngine {
 
         case .inactive, .pending:
             currentCursor = location
+            lock.unlock()
+
+            // Only activate Autoscroll where allowed (by default: scrollable empty browser areas only!)
+            guard SystemPermissions.canActivateAutoscroll(
+                at: location,
+                bundleID: bundleID,
+                browsersOnly: config.autoscrollBrowsersOnly
+            ) else {
+                return false
+            }
+
             if config.autoscrollMode == .smart {
-                lock.unlock()
-                let isInteractive = SystemPermissions.isInteractiveMiddleClickTarget(at: location)
-                if isInteractive {
-                    // Clicking directly on a link or browser tab -> pass through normal middle click immediately!
-                    return false
-                }
-                // Empty page area -> activate immediately (shows badge right away like Windows!)
                 lock.lock()
                 state = .pending(anchor: location, mode: .smart, interactiveTarget: false)
                 lock.unlock()
@@ -70,6 +74,7 @@ final class AutoscrollEngine {
                 return true
             } else {
                 // holdOnly mode: buffer until dragged past threshold; if released without drag, replay middle click
+                lock.lock()
                 state = .pending(anchor: location, mode: .holdOnly, interactiveTarget: false)
                 lock.unlock()
                 return true

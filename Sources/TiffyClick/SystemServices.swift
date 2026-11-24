@@ -3,6 +3,7 @@ import ApplicationServices
 import CoreGraphics
 import Foundation
 import os.log
+import TiffyClickCore
 
 let logger = Logger(subsystem: "com.local.tiffy-click", category: "TiffyClick")
 
@@ -32,6 +33,144 @@ enum SystemPermissions {
             "com.apple.driver.AppleBluetoothMultitouch.trackpad" as CFString,
             nil
         )
+    }
+
+    /// Determines whether Autoscroll should activate at `cgPoint`.
+    /// When `browsersOnly` is true (default), Autoscroll activates ONLY on empty, scrollable webpage areas
+    /// inside a web browser — everywhere else (desktop, non-browser apps, browser tabs/toolbars, links,
+    /// buttons, text inputs, non-scrollable pages) behaves as a normal middle click.
+    static func canActivateAutoscroll(at cgPoint: CGPoint, bundleID: String?, browsersOnly: Bool) -> Bool {
+        if browsersOnly {
+            guard BrowserRegistry.isBrowser(bundleID: bundleID) else {
+                return false
+            }
+            return isScrollableEmptyWebArea(at: cgPoint)
+        } else {
+            return !isInteractiveMiddleClickTarget(at: cgPoint)
+        }
+    }
+
+    /// Checks via macOS Accessibility whether `cgPoint` is inside a scrollable, non-interactive `AXWebArea`.
+    private static func isScrollableEmptyWebArea(at cgPoint: CGPoint) -> Bool {
+        let systemWide = AXUIElementCreateSystemWide()
+        var elementRef: AXUIElement?
+        let result = AXUIElementCopyElementAtPosition(systemWide, Float(cgPoint.x), Float(cgPoint.y), &elementRef)
+        guard result == .success, var current = elementRef else {
+            return false
+        }
+
+        let interactiveRoles: Set<String> = [
+            "AXLink",
+            "AXTab",
+            "AXTabButton",
+            "AXRadioButton",
+            "AXButton",
+            "AXTextField",
+            "AXTextArea",
+            "AXComboBox",
+            "AXPopUpButton",
+            "AXMenuItem",
+            "AXMenuBarItem",
+            "AXCheckBox",
+            "AXSlider",
+            "AXToolbar",
+            "AXTabGroup",
+            "AXScrollBar"
+        ]
+        let interactiveSubroles: Set<String> = [
+            "AXTabButton",
+            "AXCloseButton",
+            "AXLink",
+            "AXSearchField"
+        ]
+
+        var webArea: AXUIElement?
+        var scrollArea: AXUIElement?
+
+        for _ in 0..<18 {
+            let role = axStringAttribute(current, kAXRoleAttribute)
+            let subrole = axStringAttribute(current, kAXSubroleAttribute)
+
+            if webArea == nil {
+                if let role, interactiveRoles.contains(role) {
+                    return false
+                }
+                if let subrole, interactiveSubroles.contains(subrole) {
+                    return false
+                }
+                if role != "AXWebArea" && hasAttribute(current, "AXURL") {
+                    return false
+                }
+            }
+
+            if role == "AXWebArea" {
+                webArea = current
+            } else if role == "AXScrollArea" {
+                scrollArea = current
+                if webArea != nil {
+                    break
+                }
+            } else if role == "AXWindow" || role == "AXApplication" {
+                break
+            }
+
+            guard let parent = axParent(of: current) else { break }
+            current = parent
+        }
+
+        // Must be inside an actual webpage viewport (never browser tabs/toolbar/bookmarks)
+        guard let webArea else { return false }
+
+        // Check scrollability if enclosing AXScrollArea exposes scrollbars or frame dimensions
+        if let scrollArea {
+            if hasAttribute(scrollArea, kAXVerticalScrollBarAttribute)
+                || hasAttribute(scrollArea, kAXHorizontalScrollBarAttribute) {
+                return true
+            }
+            if let webSize = axSizeAttribute(webArea),
+               let scrollSize = axSizeAttribute(scrollArea) {
+                return webSize.height > scrollSize.height + 2 || webSize.width > scrollSize.width + 2
+            }
+        }
+
+        // Fallback: if browser hides scrollArea attributes (e.g. certain Chromium/Arc builds),
+        // allow autoscroll inside non-interactive AXWebArea
+        return true
+    }
+
+    private static func axStringAttribute(_ element: AXUIElement, _ attribute: String) -> String? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success else { return nil }
+        return value as? String
+    }
+
+    private static func hasAttribute(_ element: AXUIElement, _ attribute: String) -> Bool {
+        var value: CFTypeRef?
+        return AXUIElementCopyAttributeValue(element, attribute as CFString, &value) == .success && value != nil
+    }
+
+    private static func axParent(of element: AXUIElement) -> AXUIElement? {
+        var parentVal: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, kAXParentAttribute as CFString, &parentVal) == .success,
+              let parent = parentVal,
+              CFGetTypeID(parent) == AXUIElementGetTypeID() else {
+            return nil
+        }
+        return (parent as! AXUIElement)
+    }
+
+    private static func axSizeAttribute(_ element: AXUIElement) -> CGSize? {
+        var value: CFTypeRef?
+        guard AXUIElementCopyAttributeValue(element, kAXSizeAttribute as CFString, &value) == .success,
+              let raw = value,
+              CFGetTypeID(raw) == AXValueGetTypeID() else {
+            return nil
+        }
+        var size = CGSize.zero
+        if AXValueGetValue(raw as! AXValue, .cgSize, &size) {
+            return size
+        }
+        return nil
     }
 
     /// Inspects the accessibility element under the CG screen coordinate.
