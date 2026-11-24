@@ -2,7 +2,7 @@ import AppKit
 import CoreGraphics
 import Foundation
 import MultitouchSupport
-import TiffyClickCore
+import PliwClickCore
 
 /// Central input coordinator combining MultitouchSupport (Trackpad / Magic Mouse)
 /// with CGEventTap (Middle-Click, Middle-Drag, and Universal Autoscroll).
@@ -42,7 +42,7 @@ final class InputController {
         guard !hasStarted else { return }
         hasStarted = true
 
-        logger.info("Starting tiffy-click input listeners")
+        logger.info("Starting pliw-click input listeners")
         registerMultitouchDevices()
         ioMonitor?.start()
         observeSystemEvents()
@@ -60,7 +60,7 @@ final class InputController {
 
     @MainActor
     func restartListeners() {
-        logger.info("Restarting tiffy-click listeners...")
+        logger.info("Restarting pliw-click listeners...")
         autoscrollEngine?.forceStop()
         stopMultitouchDevices()
         stopEventTap()
@@ -93,7 +93,7 @@ final class InputController {
     }
 
     private func handleMultitouchFrame(data: UnsafePointer<MTTouch>?, count: Int) {
-        let config = TiffyClickConfig.shared.snapshot
+        let config = PliwClickConfig.shared.snapshot
         guard config.isEnabled else {
             stateLock.lock()
             isTargetFingersDown = false
@@ -249,11 +249,11 @@ final class InputController {
         }
 
         // Never intercept our own synthetic events
-        if event.getIntegerValueField(.eventSourceUserData) == kTiffySyntheticEventTag {
+        if event.getIntegerValueField(.eventSourceUserData) == kPliwSyntheticEventTag {
             return Unmanaged.passUnretained(event)
         }
 
-        let config = TiffyClickConfig.shared.snapshot
+        let config = PliwClickConfig.shared.snapshot
         guard config.isEnabled else {
             return Unmanaged.passUnretained(event)
         }

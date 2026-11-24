@@ -6,23 +6,23 @@ PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 cd "${PROJECT_DIR}"
 
-echo "🔨 Building Tiffy Click (Release mode)..."
+echo "🔨 Building Pliw Click (Release mode)..."
 swift build -c release -Xswiftc -cross-module-optimization
 
-RELEASE_BIN="${PROJECT_DIR}/.build/release/tiffy-click"
-APP_DIR="${PROJECT_DIR}/Tiffy Click.app"
+RELEASE_BIN="${PROJECT_DIR}/.build/release/pliw-click"
+APP_DIR="${PROJECT_DIR}/Pliw Click.app"
 CONTENTS_DIR="${APP_DIR}/Contents"
 MACOS_DIR="${CONTENTS_DIR}/MacOS"
 RESOURCES_DIR="${CONTENTS_DIR}/Resources"
 
-echo "📦 Assembling Tiffy Click.app bundle..."
-rm -rf "${PROJECT_DIR}/tiffy-click.app" "${APP_DIR}"
+echo "📦 Assembling Pliw Click.app bundle..."
+rm -rf "${PROJECT_DIR}/pliw-click.app" "${APP_DIR}"
 mkdir -p "${MACOS_DIR}"
 mkdir -p "${RESOURCES_DIR}"
 
-cp "${RELEASE_BIN}" "${MACOS_DIR}/tiffy-click"
-strip "${MACOS_DIR}/tiffy-click"
-chmod +x "${MACOS_DIR}/tiffy-click"
+cp "${RELEASE_BIN}" "${MACOS_DIR}/pliw-click"
+strip "${MACOS_DIR}/pliw-click"
+chmod +x "${MACOS_DIR}/pliw-click"
 
 if [ -d "${PROJECT_DIR}/Resources" ]; then
     cp -R "${PROJECT_DIR}/Resources/"* "${RESOURCES_DIR}/" || true
@@ -34,21 +34,21 @@ cat << 'EOF' > "${CONTENTS_DIR}/Info.plist"
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key>
-    <string>tiffy-click</string>
+    <string>pliw-click</string>
     <key>CFBundleIconFile</key>
     <string>AppIcon</string>
     <key>CFBundleIdentifier</key>
-    <string>com.local.tiffy-click</string>
+    <string>com.local.pliw-click</string>
     <key>CFBundleName</key>
-    <string>Tiffy Click</string>
+    <string>Pliw Click</string>
     <key>CFBundleDisplayName</key>
-    <string>Tiffy Click</string>
+    <string>Pliw Click</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.2.2</string>
+    <string>1.3.0</string>
     <key>CFBundleVersion</key>
-    <string>1.2.2</string>
+    <string>1.3.0</string>
     <key>LSMinimumSystemVersion</key>
     <string>13.0</string>
     <key>LSUIElement</key>
@@ -61,7 +61,7 @@ cat << 'EOF' > "${CONTENTS_DIR}/Info.plist"
 </plist>
 EOF
 
-echo "🔏 Code signing Tiffy Click.app with stable certificate..."
+echo "🔏 Code signing Pliw Click.app with stable certificate..."
 SIGN_CERT="MonkeyToolsDeveloper"
 if ! security find-certificate -c "${SIGN_CERT}" ~/Library/Keychains/login.keychain-db >/dev/null 2>&1; then
     if security find-certificate -c "MonkeyCopyDeveloper" ~/Library/Keychains/login.keychain-db >/dev/null 2>&1; then
@@ -87,12 +87,12 @@ codesign --force --deep --sign "${SIGN_CERT}" "${APP_DIR}" || codesign --force -
 echo "✅ Successfully built: ${APP_DIR}"
 
 if [ -z "${SKIP_INSTALL}" ]; then
-    echo "📲 Updating /Applications/Tiffy Click.app..."
-    pkill -9 -f "Tiffy Click.app" || true
-    pkill -9 -f "tiffy-click.app" || true
-    rm -rf "/Applications/tiffy-click.app" "/Applications/Tiffy Click.app"
-    cp -R "${APP_DIR}" "/Applications/Tiffy Click.app"
-    echo "🎉 Installed /Applications/Tiffy Click.app"
+    echo "📲 Updating /Applications/Pliw Click.app..."
+    pkill -9 -f "Pliw Click.app" || true
+    pkill -9 -f "pliw-click.app" || true
+    rm -rf "/Applications/pliw-click.app" "/Applications/Pliw Click.app"
+    cp -R "${APP_DIR}" "/Applications/Pliw Click.app"
+    echo "🎉 Installed /Applications/Pliw Click.app"
 else
     echo "⏭️ Skipping install to /Applications because SKIP_INSTALL is set."
 fi

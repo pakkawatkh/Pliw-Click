@@ -1,10 +1,10 @@
 import AppKit
 import ServiceManagement
 import SwiftUI
-import TiffyClickCore
+import PliwClickCore
 
 struct SettingsView: View {
-    @ObservedObject var config: TiffyClickConfig
+    @ObservedObject var config: PliwClickConfig
     @ObservedObject var accessibilityMonitor: AccessibilityMonitor
     @ObservedObject var updater: UpdateChecker
 
@@ -37,7 +37,7 @@ struct SettingsView: View {
 }
 
 private struct GeneralSettingsTab: View {
-    @ObservedObject var config: TiffyClickConfig
+    @ObservedObject var config: PliwClickConfig
     @ObservedObject var accessibilityMonitor: AccessibilityMonitor
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
@@ -56,7 +56,7 @@ private struct GeneralSettingsTab: View {
                                 .font(.headline)
                             Text(L10n.t(
                                 "อนุญาตใน การตั้งค่าระบบ เพื่อเปิดใช้งานคลิกกลางและ Autoscroll",
-                                "Allow Tiffy Click in System Settings to enable middle-click and Autoscroll.",
+                                "Allow Pliw Click in System Settings to enable middle-click and Autoscroll.",
                                 lang: lang
                             ))
                             .font(.caption)
@@ -74,7 +74,7 @@ private struct GeneralSettingsTab: View {
             }
 
             Section(L10n.t("ทั่วไป", "General", lang: lang)) {
-                Toggle(L10n.t("เปิดใช้งาน Tiffy Click", "Enable Tiffy Click", lang: lang), isOn: $config.isEnabled)
+                Toggle(L10n.t("เปิดใช้งาน Pliw Click", "Enable Pliw Click", lang: lang), isOn: $config.isEnabled)
 
                 Toggle(L10n.t("เปิดอัตโนมัติเมื่อเข้าสู่ระบบ", "Launch at Login", lang: lang), isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { enabled in
@@ -129,7 +129,7 @@ private struct GeneralSettingsTab: View {
 }
 
 private struct TrackpadSettingsTab: View {
-    @ObservedObject var config: TiffyClickConfig
+    @ObservedObject var config: PliwClickConfig
 
     private var lang: AppLanguage { config.language }
 
@@ -230,7 +230,7 @@ private struct TrackpadSettingsTab: View {
 }
 
 private struct AppsSettingsTab: View {
-    @ObservedObject var config: TiffyClickConfig
+    @ObservedObject var config: PliwClickConfig
     @State private var newBundleID = ""
 
     private var lang: AppLanguage { config.language }
@@ -301,7 +301,7 @@ private struct AppsSettingsTab: View {
 
 private struct AboutSettingsTab: View {
     @ObservedObject var updater: UpdateChecker
-    @ObservedObject var config: TiffyClickConfig
+    @ObservedObject var config: PliwClickConfig
 
     private var lang: AppLanguage { config.language }
 
@@ -317,7 +317,7 @@ private struct AboutSettingsTab: View {
             }
 
             VStack(spacing: 4) {
-                Text("Tiffy Click")
+                Text("Pliw Click")
                     .font(.title2.weight(.semibold))
                 Text(L10n.t("เวอร์ชัน \(updater.currentVersion)", "Version \(updater.currentVersion)", lang: lang))
                     .font(.subheadline)

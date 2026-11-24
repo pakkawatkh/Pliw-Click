@@ -1,6 +1,6 @@
 import AppKit
 import SwiftUI
-import TiffyClickCore
+import PliwClickCore
 
 @MainActor
 final class AutoscrollOverlayModel: ObservableObject {

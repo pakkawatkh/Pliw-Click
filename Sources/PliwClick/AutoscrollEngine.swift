@@ -1,10 +1,10 @@
 import AppKit
 import CoreGraphics
 import Foundation
-import TiffyClickCore
+import PliwClickCore
 
-/// Tag placed on synthetic CGEvents posted by tiffy-click so our own event tap ignores them.
-let kTiffySyntheticEventTag: Int64 = 0x54494646 // "TIFF"
+/// Tag placed on synthetic CGEvents posted by pliw-click so our own event tap ignores them.
+let kPliwSyntheticEventTag: Int64 = 0x54494646 // "TIFF"
 
 /// Manages Windows-style universal Autoscroll (both Hold-and-Move and Smart Click-to-Toggle).
 final class AutoscrollEngine {
@@ -22,7 +22,7 @@ final class AutoscrollEngine {
     private var state: State = .inactive
     private var currentCursor: CGPoint = .zero
     private var timer: DispatchSourceTimer?
-    private let timerQueue = DispatchQueue(label: "com.local.tiffy-click.autoscroll", qos: .userInteractive)
+    private let timerQueue = DispatchQueue(label: "com.local.pliw-click.autoscroll", qos: .userInteractive)
     private let overlay: AutoscrollOverlayController
 
     init(overlay: AutoscrollOverlayController) {
@@ -178,7 +178,7 @@ final class AutoscrollEngine {
     }
 
     private func tick() {
-        let config = TiffyClickConfig.shared.snapshot
+        let config = PliwClickConfig.shared.snapshot
         lock.lock()
         let anchor: CGPoint?
         switch state {
@@ -214,7 +214,7 @@ final class AutoscrollEngine {
                 wheel2: step.wheelX,
                 wheel3: 0
             ) {
-                scrollEvent.setIntegerValueField(.eventSourceUserData, value: kTiffySyntheticEventTag)
+                scrollEvent.setIntegerValueField(.eventSourceUserData, value: kPliwSyntheticEventTag)
                 scrollEvent.post(tap: .cghidEventTap)
             }
         }
@@ -227,7 +227,7 @@ final class AutoscrollEngine {
             mouseCursorPosition: location,
             mouseButton: .center
         ) {
-            down.setIntegerValueField(.eventSourceUserData, value: kTiffySyntheticEventTag)
+            down.setIntegerValueField(.eventSourceUserData, value: kPliwSyntheticEventTag)
             down.post(tap: .cghidEventTap)
         }
         if let up = CGEvent(
@@ -236,7 +236,7 @@ final class AutoscrollEngine {
             mouseCursorPosition: location,
             mouseButton: .center
         ) {
-            up.setIntegerValueField(.eventSourceUserData, value: kTiffySyntheticEventTag)
+            up.setIntegerValueField(.eventSourceUserData, value: kPliwSyntheticEventTag)
             up.post(tap: .cghidEventTap)
         }
     }

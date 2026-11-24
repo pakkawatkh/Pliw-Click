@@ -114,8 +114,8 @@ public struct ConfigSnapshot: Sendable, Equatable {
     }
 }
 
-public final class TiffyClickConfig: ObservableObject {
-    public static let shared = TiffyClickConfig()
+public final class PliwClickConfig: ObservableObject {
+    public static let shared = PliwClickConfig()
 
     private let defaults: UserDefaults
     private let lock = NSLock()

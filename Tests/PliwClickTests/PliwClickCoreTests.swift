@@ -1,8 +1,8 @@
 import CoreGraphics
 import XCTest
-@testable import TiffyClickCore
+@testable import PliwClickCore
 
-final class TiffyClickCoreTests: XCTestCase {
+final class PliwClickCoreTests: XCTestCase {
 
     // MARK: - AutoscrollMath Tests
 
@@ -203,11 +203,11 @@ final class TiffyClickCoreTests: XCTestCase {
     }
 
     func testConfigPersistenceAndSnapshot() {
-        let suiteName = "com.local.tiffy-click.tests.\(UUID().uuidString)"
+        let suiteName = "com.local.pliw-click.tests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suiteName)!
         defer { defaults.removePersistentDomain(forName: suiteName) }
 
-        let config = TiffyClickConfig(defaults: defaults)
+        let config = PliwClickConfig(defaults: defaults)
         config.minimumFingers = 4
         config.autoscrollEnabled = false
         config.toggleIgnoredApp("com.figma.Desktop")
@@ -216,13 +216,13 @@ final class TiffyClickCoreTests: XCTestCase {
         XCTAssertFalse(config.snapshot.autoscrollEnabled)
         XCTAssertTrue(config.snapshot.ignoredAppBundles.contains("com.figma.Desktop"))
 
-        let reloaded = TiffyClickConfig(defaults: defaults)
+        let reloaded = PliwClickConfig(defaults: defaults)
         XCTAssertEqual(reloaded.minimumFingers, 4)
         XCTAssertFalse(reloaded.autoscrollEnabled)
         XCTAssertTrue(reloaded.ignoredAppBundles.contains("com.figma.Desktop"))
 
         reloaded.language = .en
-        let reloadedLang = TiffyClickConfig(defaults: defaults)
+        let reloadedLang = PliwClickConfig(defaults: defaults)
         XCTAssertEqual(reloadedLang.language, .en)
         XCTAssertTrue(reloadedLang.autoscrollBrowsersOnly)
         XCTAssertEqual(L10n.t("ไทย", "English", lang: .th), "ไทย")

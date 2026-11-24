@@ -1,11 +1,11 @@
 import AppKit
 import ServiceManagement
 import SwiftUI
-import TiffyClickCore
+import PliwClickCore
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
-    private let config = TiffyClickConfig.shared
+    private let config = PliwClickConfig.shared
     private let accessibilityMonitor = AccessibilityMonitor()
     private let overlayController = AutoscrollOverlayController()
     private let updater = UpdateChecker.shared
@@ -62,10 +62,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.behavior = .removalAllowed
 
         if let button = statusItem.button {
-            let image = NSImage(systemSymbolName: "computermouse.fill", accessibilityDescription: "Tiffy Click")
+            let image = NSImage(systemSymbolName: "computermouse.fill", accessibilityDescription: "Pliw Click")
             image?.isTemplate = true
             button.image = image
-            button.toolTip = "Tiffy Click"
+            button.toolTip = "Pliw Click"
         }
 
         let menu = NSMenu()
@@ -194,7 +194,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             "v\(updater.currentVersion) · Check for Updates…",
             lang: lang
         )
-        quitMenuItem.title = L10n.t("ออกจาก Tiffy Click", "Quit Tiffy Click", lang: lang)
+        quitMenuItem.title = L10n.t("ออกจาก Pliw Click", "Quit Pliw Click", lang: lang)
 
         langThItem.state = lang == .th ? .on : .off
         langEnItem.state = lang == .en ? .on : .off
@@ -287,7 +287,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func openSettings() {
         let lang = config.language
         if let window = settingsWindow {
-            window.title = L10n.t("การตั้งค่า Tiffy Click", "Tiffy Click Settings", lang: lang)
+            window.title = L10n.t("การตั้งค่า Pliw Click", "Pliw Click Settings", lang: lang)
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -301,7 +301,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let hosting = NSHostingController(rootView: rootView)
 
         let window = NSWindow(contentViewController: hosting)
-        window.title = L10n.t("การตั้งค่า Tiffy Click", "Tiffy Click Settings", lang: lang)
+        window.title = L10n.t("การตั้งค่า Pliw Click", "Pliw Click Settings", lang: lang)
         window.styleMask = [.titled, .closable, .miniaturizable]
         window.center()
         window.isReleasedWhenClosed = false

@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
 import SwiftUI
-import TiffyClickCore
+import PliwClickCore
 
 struct ReleaseMetadata: Decodable {
     let latestVersion: String
@@ -24,7 +24,7 @@ private enum UpdateToastState {
 private final class UpdateToastModel: ObservableObject {
     @Published var state: UpdateToastState = .upToDate(version: "1.0.0")
     @Published var isVisible: Bool = false
-    @Published var language: AppLanguage = TiffyClickConfig.shared.language
+    @Published var language: AppLanguage = PliwClickConfig.shared.language
     var onUpdate: (() -> Void)?
     var onDismiss: (() -> Void)?
 }
@@ -73,7 +73,7 @@ private struct UpdateToastView: View {
                         Text(L10n.t("เป็นเวอร์ชันล่าสุดแล้ว", "Up to Date", lang: lang))
                             .font(.system(size: 13, weight: .semibold))
                     }
-                    Text("Tiffy Click v\(version)")
+                    Text("Pliw Click v\(version)")
                         .font(.system(size: 11.5))
                         .foregroundColor(.secondary)
 
@@ -178,7 +178,7 @@ private final class UpdateToastController {
         dismissWorkItem?.cancel()
         dismissWorkItem = nil
 
-        model.language = TiffyClickConfig.shared.language
+        model.language = PliwClickConfig.shared.language
         model.state = state
         model.onUpdate = onUpdate
         model.onDismiss = { [weak self] in
@@ -258,7 +258,7 @@ final class UpdateChecker: ObservableObject {
     @Published var statusMessage: String = ""
     @Published var availableRelease: ReleaseMetadata?
 
-    static let versionURL = URL(string: "https://pakkawatkh.github.io/Tiffy-App/tiffy-click/version.json")!
+    static let versionURL = URL(string: "https://pakkawatkh.github.io/Pliw-App/pliw-click/version.json")!
 
     private let toast = UpdateToastController()
 
@@ -266,7 +266,7 @@ final class UpdateChecker: ObservableObject {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
     }
 
-    private var lang: AppLanguage { TiffyClickConfig.shared.language }
+    private var lang: AppLanguage { PliwClickConfig.shared.language }
 
     func checkForUpdates(silent: Bool = false) {
         guard !isChecking else { return }
@@ -348,7 +348,7 @@ final class UpdateChecker: ObservableObject {
                 }
 
                 let fm = FileManager.default
-                let tempDir = fm.temporaryDirectory.appendingPathComponent("tiffy-click-update-\(UUID().uuidString)")
+                let tempDir = fm.temporaryDirectory.appendingPathComponent("pliw-click-update-\(UUID().uuidString)")
                 try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
                 let ditto = Process()
@@ -357,8 +357,8 @@ final class UpdateChecker: ObservableObject {
                 try ditto.run()
                 ditto.waitUntilExit()
 
-                let candidateNew = tempDir.appendingPathComponent("Tiffy Click.app")
-                let candidateOld = tempDir.appendingPathComponent("tiffy-click.app")
+                let candidateNew = tempDir.appendingPathComponent("Pliw Click.app")
+                let candidateOld = tempDir.appendingPathComponent("pliw-click.app")
                 let extractedApp = fm.fileExists(atPath: candidateNew.path) ? candidateNew : candidateOld
                 guard ditto.terminationStatus == 0, fm.fileExists(atPath: extractedApp.path) else {
                     openDownloadPage(meta)
@@ -366,8 +366,8 @@ final class UpdateChecker: ObservableObject {
                     return
                 }
 
-                let targetApp = URL(fileURLWithPath: "/Applications/Tiffy Click.app")
-                let legacyApp = URL(fileURLWithPath: "/Applications/tiffy-click.app")
+                let targetApp = URL(fileURLWithPath: "/Applications/Pliw Click.app")
+                let legacyApp = URL(fileURLWithPath: "/Applications/pliw-click.app")
                 if fm.fileExists(atPath: targetApp.path) {
                     try fm.removeItem(at: targetApp)
                 }

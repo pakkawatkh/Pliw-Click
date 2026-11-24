@@ -2,18 +2,18 @@
 import PackageDescription
 
 let package = Package(
-    name: "tiffy-click",
+    name: "pliw-click",
     platforms: [
         .macOS(.v13)
     ],
     products: [
         .executable(
-            name: "tiffy-click",
-            targets: ["TiffyClick"]
+            name: "pliw-click",
+            targets: ["PliwClick"]
         ),
         .library(
-            name: "TiffyClickCore",
-            targets: ["TiffyClickCore"]
+            name: "PliwClickCore",
+            targets: ["PliwClickCore"]
         )
     ],
     dependencies: [],
@@ -23,27 +23,27 @@ let package = Package(
             path: "Sources/MultitouchSupport"
         ),
         .target(
-            name: "TiffyClickCore",
+            name: "PliwClickCore",
             dependencies: ["MultitouchSupport"],
-            path: "Sources/TiffyClickCore",
+            path: "Sources/PliwClickCore",
             linkerSettings: [
                 .linkedFramework("MultitouchSupport"),
                 .unsafeFlags(["-F/System/Library/PrivateFrameworks"])
             ]
         ),
         .executableTarget(
-            name: "TiffyClick",
-            dependencies: ["TiffyClickCore"],
-            path: "Sources/TiffyClick",
+            name: "PliwClick",
+            dependencies: ["PliwClickCore"],
+            path: "Sources/PliwClick",
             linkerSettings: [
                 .linkedFramework("MultitouchSupport"),
                 .unsafeFlags(["-F/System/Library/PrivateFrameworks"])
             ]
         ),
         .testTarget(
-            name: "TiffyClickTests",
-            dependencies: ["TiffyClickCore"],
-            path: "Tests/TiffyClickTests",
+            name: "PliwClickTests",
+            dependencies: ["PliwClickCore"],
+            path: "Tests/PliwClickTests",
             linkerSettings: [
                 .linkedFramework("MultitouchSupport"),
                 .unsafeFlags(["-F/System/Library/PrivateFrameworks"])

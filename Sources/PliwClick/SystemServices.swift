@@ -3,9 +3,9 @@ import ApplicationServices
 import CoreGraphics
 import Foundation
 import os.log
-import TiffyClickCore
+import PliwClickCore
 
-let logger = Logger(subsystem: "com.local.tiffy-click", category: "TiffyClick")
+let logger = Logger(subsystem: "com.local.pliw-click", category: "PliwClick")
 
 enum SystemPermissions {
     private static let axQueueLock = NSLock()
