@@ -15,21 +15,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private var permissionStatusItem: NSMenuItem!
     private var permissionActionItem: NSMenuItem!
+    private var permissionSeparator: NSMenuItem!
     private var enabledItem: NSMenuItem!
     private var autoscrollToggleItem: NSMenuItem!
-    private var ignoreAppItem: NSMenuItem!
-    private var ignoreAutoscrollItem: NSMenuItem!
+    private var tapToClickItem: NSMenuItem!
     private var fingersMenuItem: NSMenuItem!
     private var fingerOptionItems: [Int: NSMenuItem] = [:]
     private var allowMoreFingersItem: NSMenuItem!
-    private var tapToClickItem: NSMenuItem!
+    private var currentAppMenuItem: NSMenuItem!
+    private var ignoreAutoscrollItem: NSMenuItem!
+    private var ignoreAppItem: NSMenuItem!
     private var settingsMenuItem: NSMenuItem!
     private var restartMenuItem: NSMenuItem!
-    private var launchAtLoginItem: NSMenuItem!
-    private var updateMenuItem: NSMenuItem!
     private var languageMenuItem: NSMenuItem!
     private var langThItem: NSMenuItem!
     private var langEnItem: NSMenuItem!
+    private var updateMenuItem: NSMenuItem!
+    private var versionMenuItem: NSMenuItem!
     private var quitMenuItem: NSMenuItem!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -64,28 +66,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             let image = NSImage(systemSymbolName: "computermouse.fill", accessibilityDescription: "tiffy-click")
             image?.isTemplate = true
             button.image = image
-            button.toolTip = "tiffy-click — Middle Click & Universal Autoscroll"
+            button.toolTip = "tiffy-click"
         }
 
         let menu = NSMenu()
         menu.delegate = self
 
+        // Accessibility warning banner (hidden once granted)
         permissionStatusItem = menu.addItem(withTitle: "", action: nil, keyEquivalent: "")
+        permissionStatusItem.image = symbol("exclamationmark.triangle")
         permissionActionItem = menu.addItem(withTitle: "", action: #selector(openAccessibility), keyEquivalent: "")
         permissionActionItem.target = self
-        menu.addItem(.separator())
+        permissionActionItem.image = symbol("lock.shield")
+        permissionSeparator = NSMenuItem.separator()
+        menu.addItem(permissionSeparator)
 
+        // Core toggles
         enabledItem = menu.addItem(withTitle: "", action: #selector(toggleEnabled), keyEquivalent: "")
         enabledItem.target = self
 
         autoscrollToggleItem = menu.addItem(withTitle: "", action: #selector(toggleAutoscroll), keyEquivalent: "")
         autoscrollToggleItem.target = self
+
         menu.addItem(.separator())
 
+        // Trackpad & per-app controls
         tapToClickItem = menu.addItem(withTitle: "", action: #selector(toggleTapToClick), keyEquivalent: "")
         tapToClickItem.target = self
 
         fingersMenuItem = menu.addItem(withTitle: "", action: nil, keyEquivalent: "")
+        fingersMenuItem.image = symbol("hand.tap")
         let fingersSubmenu = NSMenu()
         for count in 2...10 {
             let item = fingersSubmenu.addItem(withTitle: "\(count)", action: #selector(selectFingerCount(_:)), keyEquivalent: "")
@@ -98,36 +108,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         allowMoreFingersItem.target = self
         fingersMenuItem.submenu = fingersSubmenu
 
-        ignoreAutoscrollItem = menu.addItem(withTitle: "", action: #selector(toggleIgnoreAutoscroll), keyEquivalent: "")
+        currentAppMenuItem = menu.addItem(withTitle: "", action: nil, keyEquivalent: "")
+        currentAppMenuItem.image = symbol("macwindow")
+        let currentAppSubmenu = NSMenu()
+        ignoreAutoscrollItem = currentAppSubmenu.addItem(withTitle: "", action: #selector(toggleIgnoreAutoscroll), keyEquivalent: "")
         ignoreAutoscrollItem.target = self
-
-        ignoreAppItem = menu.addItem(withTitle: "", action: #selector(toggleIgnoreApp), keyEquivalent: "")
+        ignoreAppItem = currentAppSubmenu.addItem(withTitle: "", action: #selector(toggleIgnoreApp), keyEquivalent: "")
         ignoreAppItem.target = self
+        currentAppMenuItem.submenu = currentAppSubmenu
+
         menu.addItem(.separator())
 
+        // App controls
         settingsMenuItem = menu.addItem(withTitle: "", action: #selector(openSettings), keyEquivalent: ",")
         settingsMenuItem.target = self
+        settingsMenuItem.image = symbol("gearshape")
 
-        restartMenuItem = menu.addItem(withTitle: "", action: #selector(restartListeners), keyEquivalent: "r")
+        // Option-key alternate for power users (keeps menu minimal!)
+        restartMenuItem = menu.addItem(withTitle: "", action: #selector(restartListeners), keyEquivalent: ",")
+        restartMenuItem.keyEquivalentModifierMask = [.command, .option]
+        restartMenuItem.isAlternate = true
         restartMenuItem.target = self
+        restartMenuItem.image = symbol("arrow.clockwise")
 
-        languageMenuItem = menu.addItem(withTitle: "Language / ภาษา", action: nil, keyEquivalent: "")
+        languageMenuItem = menu.addItem(withTitle: "", action: nil, keyEquivalent: "")
+        languageMenuItem.image = symbol("globe")
         let langSubmenu = NSMenu()
-        langThItem = langSubmenu.addItem(withTitle: "ไทย (Thai)", action: #selector(selectThai), keyEquivalent: "")
+        langThItem = langSubmenu.addItem(withTitle: "ไทย", action: #selector(selectThai), keyEquivalent: "")
         langThItem.target = self
         langEnItem = langSubmenu.addItem(withTitle: "English", action: #selector(selectEnglish), keyEquivalent: "")
         langEnItem.target = self
         languageMenuItem.submenu = langSubmenu
 
-        launchAtLoginItem = menu.addItem(withTitle: "", action: #selector(toggleLaunchAtLogin), keyEquivalent: "")
-        launchAtLoginItem.target = self
-
         updateMenuItem = menu.addItem(withTitle: "", action: #selector(checkUpdates), keyEquivalent: "")
         updateMenuItem.target = self
+        updateMenuItem.image = symbol("arrow.down.circle")
 
         menu.addItem(.separator())
-        let versionItem = menu.addItem(withTitle: "tiffy-click v\(updater.currentVersion)", action: nil, keyEquivalent: "")
-        versionItem.isEnabled = false
+
+        versionMenuItem = menu.addItem(withTitle: "tiffy-click \(updater.currentVersion)", action: nil, keyEquivalent: "")
+        versionMenuItem.isEnabled = false
 
         quitMenuItem = menu.addItem(withTitle: "", action: #selector(quitApp), keyEquivalent: "q")
         quitMenuItem.target = self
@@ -136,28 +156,46 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         refreshLocalizedMenuTitles()
     }
 
+    private func symbol(_ name: String) -> NSImage? {
+        let img = NSImage(systemSymbolName: name, accessibilityDescription: nil)
+        img?.isTemplate = true
+        return img
+    }
+
     private func refreshLocalizedMenuTitles() {
         let lang = config.language
-        permissionStatusItem.title = L10n.t("⚠️ ยังไม่ได้อนุญาต Accessibility", "⚠️ Missing Accessibility Permission", lang: lang)
-        permissionActionItem.title = L10n.t("เปิดการตั้งค่า Accessibility...", "Open Accessibility Settings...", lang: lang)
-        enabledItem.title = L10n.t("เปิดใช้งาน tiffy-click", "Enable tiffy-click", lang: lang)
-        autoscrollToggleItem.title = L10n.t("Autoscroll (Hold Scroll)", "Autoscroll (Hold Scroll)", lang: lang)
-        tapToClickItem.title = L10n.t("Tap \(config.minimumFingers) นิ้วเพื่อคลิกกลาง", "Tap \(config.minimumFingers) Fingers to Middle Click", lang: lang)
-        let plusSuffix = config.allowMoreFingers ? "+" : ""
-        fingersMenuItem.title = L10n.t("จำนวนนิ้ว: \(config.minimumFingers)\(plusSuffix) นิ้ว", "Finger Count: \(config.minimumFingers)\(plusSuffix) Fingers", lang: lang)
+        permissionStatusItem.title = L10n.t("ต้องการสิทธิ์การช่วยการเข้าถึง", "Accessibility Required", lang: lang)
+        permissionActionItem.title = L10n.t("เปิดการตั้งค่าความเป็นส่วนตัว…", "Open Privacy Settings…", lang: lang)
+
+        enabledItem.title = L10n.t("เปิดใช้งาน", "Enabled", lang: lang)
+        autoscrollToggleItem.title = L10n.t("เลื่อนอัตโนมัติ (Autoscroll)", "Autoscroll", lang: lang)
+        tapToClickItem.title = L10n.t("แตะเพื่อคลิกกลาง", "Tap to Click", lang: lang)
+
+        let plus = config.allowMoreFingers ? "+" : ""
+        fingersMenuItem.title = L10n.t(
+            "จำนวนนิ้ว (\(config.minimumFingers)\(plus))",
+            "Fingers (\(config.minimumFingers)\(plus))",
+            lang: lang
+        )
         for count in 2...10 {
             if let item = fingerOptionItems[count] {
                 item.title = L10n.t("\(count) นิ้ว", "\(count) Fingers", lang: lang)
                 item.state = config.minimumFingers == count ? .on : .off
             }
         }
-        allowMoreFingersItem.title = L10n.t("รองรับนิ้วมากกว่าที่กำหนด (\(config.minimumFingers)+ นิ้ว)", "Allow More Fingers (\(config.minimumFingers)+)", lang: lang)
+        allowMoreFingersItem.title = L10n.t(
+            "รองรับ \(config.minimumFingers) นิ้วขึ้นไป",
+            "Allow \(config.minimumFingers)+ Fingers",
+            lang: lang
+        )
         allowMoreFingersItem.state = config.allowMoreFingers ? .on : .off
-        settingsMenuItem.title = L10n.t("ตั้งค่า (Settings)...", "Settings...", lang: lang)
-        restartMenuItem.title = L10n.t("รีสตาร์ทตัวจับนิ้ว (Restart)", "Restart Listeners", lang: lang)
-        launchAtLoginItem.title = L10n.t("เปิดอัตโนมัติเมื่อเปิดเครื่อง", "Launch at Login", lang: lang)
-        updateMenuItem.title = L10n.t("ตรวจสอบอัปเดต...", "Check for Updates...", lang: lang)
+
+        settingsMenuItem.title = L10n.t("การตั้งค่า…", "Settings…", lang: lang)
+        restartMenuItem.title = L10n.t("รีสตาร์ทตัวจับนิ้ว", "Restart Listeners", lang: lang)
+        languageMenuItem.title = L10n.t("ภาษา", "Language", lang: lang)
+        updateMenuItem.title = L10n.t("ตรวจหาอัปเดต…", "Check for Updates…", lang: lang)
         quitMenuItem.title = L10n.t("ออกจาก tiffy-click", "Quit tiffy-click", lang: lang)
+
         langThItem.state = lang == .th ? .on : .off
         langEnItem.state = lang == .en ? .on : .off
     }
@@ -166,6 +204,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         statusItem.button?.appearsDisabled = !trusted
         permissionStatusItem.isHidden = trusted
         permissionActionItem.isHidden = trusted
+        permissionSeparator.isHidden = trusted
     }
 
     func menuWillOpen(_ menu: NSMenu) {
@@ -173,24 +212,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         enabledItem.state = config.isEnabled ? .on : .off
         autoscrollToggleItem.state = config.autoscrollEnabled ? .on : .off
-
         tapToClickItem.state = config.tapToClick ? .on : .off
-        launchAtLoginItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
 
         let lang = config.language
         if let app = AppInspector.frontmostApp(), let name = app.localizedName, let bundleID = app.bundleIdentifier {
-            ignoreAppItem.title = L10n.t("ยกเว้น \(name) ทั้งหมด", "Ignore \(name) Completely", lang: lang)
-            ignoreAppItem.state = config.ignoredAppBundles.contains(bundleID) ? .on : .off
-            ignoreAppItem.isEnabled = true
+            currentAppMenuItem.title = name
+            currentAppMenuItem.isHidden = false
 
-            ignoreAutoscrollItem.title = L10n.t("ปิด Autoscroll ใน \(name)", "Disable Autoscroll in \(name)", lang: lang)
+            ignoreAutoscrollItem.title = L10n.t("ปิด Autoscroll ในแอปนี้", "Pause Autoscroll", lang: lang)
             ignoreAutoscrollItem.state = config.autoscrollIgnoredBundles.contains(bundleID) ? .on : .off
-            ignoreAutoscrollItem.isEnabled = true
+
+            ignoreAppItem.title = L10n.t("ยกเว้นแอปนี้ทั้งหมด", "Ignore App", lang: lang)
+            ignoreAppItem.state = config.ignoredAppBundles.contains(bundleID) ? .on : .off
         } else {
-            ignoreAppItem.title = L10n.t("ยกเว้นแอปนี้ทั้งหมด", "Ignore Focused App", lang: lang)
-            ignoreAutoscrollItem.title = L10n.t("ปิด Autoscroll สำหรับแอปนี้", "Disable Autoscroll for Focused App", lang: lang)
-            ignoreAppItem.isEnabled = false
-            ignoreAutoscrollItem.isEnabled = false
+            currentAppMenuItem.isHidden = true
         }
     }
 
@@ -242,24 +277,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         InputController.shared.restartListeners()
     }
 
-    @objc private func toggleLaunchAtLogin() {
-        do {
-            if SMAppService.mainApp.status == .enabled {
-                try SMAppService.mainApp.unregister()
-            } else {
-                try SMAppService.mainApp.register()
-            }
-        } catch {
-            logger.error("Failed to toggle Launch at Login: \(error.localizedDescription)")
-        }
-    }
-
     @objc private func checkUpdates() {
         updater.checkForUpdates(silent: false)
     }
 
     @objc private func openSettings() {
+        let lang = config.language
         if let window = settingsWindow {
+            window.title = L10n.t("การตั้งค่า tiffy-click", "tiffy-click Settings", lang: lang)
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             return
@@ -273,7 +298,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         let hosting = NSHostingController(rootView: rootView)
 
         let window = NSWindow(contentViewController: hosting)
-        window.title = "tiffy-click Settings"
+        window.title = L10n.t("การตั้งค่า tiffy-click", "tiffy-click Settings", lang: lang)
         window.styleMask = [.titled, .closable, .miniaturizable]
         window.center()
         window.isReleasedWhenClosed = false
