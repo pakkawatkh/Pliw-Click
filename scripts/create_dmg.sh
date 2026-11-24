@@ -52,7 +52,7 @@ echo "🗜️ Creating ZIP archive for in-app updates: ${ZIP_OUTPUT}..."
 rm -f "${ZIP_OUTPUT}"
 ditto -c -k --keepParent "${PROJECT_DIR}/Tiffy Click.app" "${ZIP_OUTPUT}"
 
-TIFFY_PORTAL_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/tiffy-app/tiffy-click"
+TIFFY_PORTAL_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/Tiffy-App/tiffy-click"
 mkdir -p "${TIFFY_PORTAL_DIR}"
 echo "📦 Syncing DMG and ZIP to ${TIFFY_PORTAL_DIR}..."
 cp -f "${DMG_OUTPUT}" "${TIFFY_PORTAL_DIR}/tiffy-click-Installer.dmg"
