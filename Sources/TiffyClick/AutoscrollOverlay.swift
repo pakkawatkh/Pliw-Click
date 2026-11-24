@@ -43,21 +43,17 @@ private struct AutoscrollBadgeView: View {
     @ObservedObject var model: AutoscrollOverlayModel
     @Environment(\.colorScheme) private var colorScheme
 
-    private let orbSize: CGFloat = 42
+    private let orbSize: CGFloat = 28
 
     private var isScrolling: Bool {
         model.direction != .none
     }
 
     private var dotOffset: CGSize {
-        let shift: CGFloat = 2.2
+        let shift: CGFloat = 1.6
         let dx: CGFloat = (model.direction.right ? shift : 0) - (model.direction.left ? shift : 0)
         let dy: CGFloat = (model.direction.down ? shift : 0) - (model.direction.up ? shift : 0)
         return CGSize(width: dx, height: dy)
-    }
-
-    private var inactiveChevronColor: Color {
-        colorScheme == .dark ? Color.white.opacity(0.62) : Color.black.opacity(0.55)
     }
 
     private var activeGlowColor: Color {
@@ -66,12 +62,12 @@ private struct AutoscrollBadgeView: View {
 
     var body: some View {
         ZStack {
-            // 1. Floating shadow base (behind glass so blur stays crystal-clear)
+            // 1. Floating shadow base
             Circle()
                 .fill(Color.black.opacity(0.01))
                 .frame(width: orbSize, height: orbSize)
-                .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.50 : 0.22), radius: 11, x: 0, y: 5)
-                .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.30 : 0.12), radius: 2.5, x: 0, y: 1)
+                .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.48 : 0.22), radius: 8, x: 0, y: 3.5)
+                .shadow(color: Color.black.opacity(colorScheme == .dark ? 0.28 : 0.12), radius: 2, x: 0, y: 1)
 
             // 2. Real behind-window macOS frosted glass blur
             LiquidGlassBackdrop(diameter: orbSize)
@@ -90,7 +86,7 @@ private struct AutoscrollBadgeView: View {
                 )
                 .frame(width: orbSize, height: orbSize)
 
-            // 4. Curved Liquid Glass specular dome reflection (top crescent sheen)
+            // 4. Curved Liquid Glass specular dome reflection
             Ellipse()
                 .fill(
                     LinearGradient(
@@ -106,7 +102,7 @@ private struct AutoscrollBadgeView: View {
                 .offset(y: -orbSize * 0.24)
                 .allowsHitTesting(false)
 
-            // 5. Prismatic Liquid Glass rim (bright specular top-left & bottom-right catchlights)
+            // 5. Prismatic Liquid Glass rim
             Circle()
                 .strokeBorder(
                     AngularGradient(
@@ -120,76 +116,73 @@ private struct AutoscrollBadgeView: View {
                         center: .center,
                         angle: .degrees(-45)
                     ),
-                    lineWidth: 1.15
+                    lineWidth: 1.0
                 )
                 .frame(width: orbSize, height: orbSize)
 
-            // 6. Ultra-fine outer hairline separator for crisp contrast on pure white or pure black pages
+            // 6. Hairline outer separator for crisp contrast on white or dark pages
             Circle()
                 .stroke(Color.black.opacity(colorScheme == .dark ? 0.45 : 0.14), lineWidth: 0.5)
                 .frame(width: orbSize + 0.5, height: orbSize + 0.5)
 
-            // 7. Subtle inner precision ring
-            Circle()
-                .stroke(
-                    (isScrolling ? activeGlowColor : (colorScheme == .dark ? Color.white : Color.black))
-                        .opacity(isScrolling ? 0.35 : 0.12),
-                    lineWidth: 0.75
-                )
-                .frame(width: 14, height: 14)
-
-            // 8. Center jewel dot (glides subtly in active scroll direction)
+            // 7. Minimal center dot
             Circle()
                 .fill(
                     isScrolling
                         ? activeGlowColor
-                        : (colorScheme == .dark ? Color.white.opacity(0.92) : Color.black.opacity(0.76))
+                        : (colorScheme == .dark ? Color.white.opacity(0.88) : Color.black.opacity(0.72))
                 )
-                .frame(width: 5.2, height: 5.2)
-                .shadow(color: isScrolling ? activeGlowColor.opacity(0.65) : .clear, radius: 4)
+                .frame(width: 4.2, height: 4.2)
+                .shadow(color: isScrolling ? activeGlowColor.opacity(0.6) : .clear, radius: 3)
                 .offset(dotOffset)
 
-            // 9. Directional chevrons with subtle active glow & glide
+            // 8. Directional chevron — shown ONLY in the active scrolling direction
             directionChevron(
                 symbol: "chevron.up",
                 active: model.direction.up,
-                offset: CGSize(width: 0, height: model.direction.up ? -14.2 : -12.8)
+                activeOffset: CGSize(width: 0, height: -8.8),
+                idleOffset: CGSize(width: 0, height: -5.5)
             )
 
             directionChevron(
                 symbol: "chevron.down",
                 active: model.direction.down,
-                offset: CGSize(width: 0, height: model.direction.down ? 14.2 : 12.8)
+                activeOffset: CGSize(width: 0, height: 8.8),
+                idleOffset: CGSize(width: 0, height: 5.5)
             )
 
             if model.horizontalEnabled {
                 directionChevron(
                     symbol: "chevron.left",
                     active: model.direction.left,
-                    offset: CGSize(width: model.direction.left ? -14.2 : -12.8, height: 0)
+                    activeOffset: CGSize(width: -8.8, height: 0),
+                    idleOffset: CGSize(width: -5.5, height: 0)
                 )
 
                 directionChevron(
                     symbol: "chevron.right",
                     active: model.direction.right,
-                    offset: CGSize(width: model.direction.right ? 14.2 : 12.8, height: 0)
+                    activeOffset: CGSize(width: 8.8, height: 0),
+                    idleOffset: CGSize(width: 5.5, height: 0)
                 )
             }
         }
-        .frame(width: 72, height: 72)
-        .scaleEffect(model.isVisible ? 1.0 : 0.76)
+        .frame(width: 54, height: 54)
+        .scaleEffect(model.isVisible ? 1.0 : 0.75)
         .opacity(model.isVisible ? 1.0 : 0.0)
-        .animation(.spring(response: 0.20, dampingFraction: 0.74), value: model.isVisible)
-        .animation(.easeOut(duration: 0.10), value: model.direction)
+        .animation(.spring(response: 0.18, dampingFraction: 0.76), value: model.isVisible)
+        .animation(.easeOut(duration: 0.12), value: model.direction)
     }
 
     @ViewBuilder
-    private func directionChevron(symbol: String, active: Bool, offset: CGSize) -> some View {
+    private func directionChevron(symbol: String, active: Bool, activeOffset: CGSize, idleOffset: CGSize) -> some View {
         Image(systemName: symbol)
-            .font(.system(size: active ? 8.2 : 7.2, weight: active ? .bold : .semibold))
-            .foregroundColor(active ? activeGlowColor : inactiveChevronColor)
-            .shadow(color: active ? activeGlowColor.opacity(0.55) : .clear, radius: 3.5)
-            .offset(offset)
+            .font(.system(size: 6.5, weight: .bold))
+            .foregroundColor(activeGlowColor)
+            .shadow(color: activeGlowColor.opacity(0.5), radius: 2.5)
+            .scaleEffect(active ? 1.0 : 0.5)
+            .opacity(active ? 1.0 : 0.0)
+            .offset(active ? activeOffset : idleOffset)
     }
 }
 
@@ -204,7 +197,7 @@ final class AutoscrollOverlayController {
         model.isVisible = false
 
         let panel = ensurePanel()
-        let size: CGFloat = 72
+        let size: CGFloat = 54
         let primaryHeight = NSScreen.screens.first?.frame.height ?? NSScreen.main?.frame.height ?? 1080
         let cocoaX = cgPoint.x - size / 2
         let cocoaY = (primaryHeight - cgPoint.y) - size / 2
@@ -233,7 +226,7 @@ final class AutoscrollOverlayController {
         if let existing = panel { return existing }
 
         let p = NSPanel(
-            contentRect: NSRect(x: 0, y: 0, width: 72, height: 72),
+            contentRect: NSRect(x: 0, y: 0, width: 54, height: 54),
             styleMask: [.borderless, .nonactivatingPanel],
             backing: .buffered,
             defer: false
@@ -246,7 +239,7 @@ final class AutoscrollOverlayController {
         p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle]
 
         let hosting = NSHostingView(rootView: AutoscrollBadgeView(model: model))
-        hosting.frame = NSRect(x: 0, y: 0, width: 72, height: 72)
+        hosting.frame = NSRect(x: 0, y: 0, width: 54, height: 54)
         p.contentView = hosting
 
         self.panel = p
