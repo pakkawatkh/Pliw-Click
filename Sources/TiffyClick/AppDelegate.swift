@@ -22,6 +22,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var smartModeItem: NSMenuItem!
     private var holdModeItem: NSMenuItem!
     private var offModeItem: NSMenuItem!
+    private var fingersMenuItem: NSMenuItem!
+    private var fingerOptionItems: [Int: NSMenuItem] = [:]
+    private var allowMoreFingersItem: NSMenuItem!
     private var tapToClickItem: NSMenuItem!
     private var settingsMenuItem: NSMenuItem!
     private var restartMenuItem: NSMenuItem!
@@ -93,6 +96,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         tapToClickItem = menu.addItem(withTitle: "", action: #selector(toggleTapToClick), keyEquivalent: "")
         tapToClickItem.target = self
 
+        fingersMenuItem = menu.addItem(withTitle: "", action: nil, keyEquivalent: "")
+        let fingersSubmenu = NSMenu()
+        for count in 2...10 {
+            let item = fingersSubmenu.addItem(withTitle: "\(count)", action: #selector(selectFingerCount(_:)), keyEquivalent: "")
+            item.tag = count
+            item.target = self
+            fingerOptionItems[count] = item
+        }
+        fingersSubmenu.addItem(.separator())
+        allowMoreFingersItem = fingersSubmenu.addItem(withTitle: "", action: #selector(toggleAllowMoreFingers), keyEquivalent: "")
+        allowMoreFingersItem.target = self
+        fingersMenuItem.submenu = fingersSubmenu
+
         ignoreAutoscrollItem = menu.addItem(withTitle: "", action: #selector(toggleIgnoreAutoscroll), keyEquivalent: "")
         ignoreAutoscrollItem.target = self
 
@@ -141,6 +157,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         holdModeItem.title = "  " + AutoscrollMode.holdOnly.displayName(lang: lang)
         offModeItem.title = "  " + AutoscrollMode.off.displayName(lang: lang)
         tapToClickItem.title = L10n.t("Tap \(config.minimumFingers) นิ้วเพื่อคลิกกลาง", "Tap \(config.minimumFingers) Fingers to Middle Click", lang: lang)
+        let plusSuffix = config.allowMoreFingers ? "+" : ""
+        fingersMenuItem.title = L10n.t("จำนวนนิ้ว: \(config.minimumFingers)\(plusSuffix) นิ้ว", "Finger Count: \(config.minimumFingers)\(plusSuffix) Fingers", lang: lang)
+        for count in 2...10 {
+            if let item = fingerOptionItems[count] {
+                item.title = L10n.t("\(count) นิ้ว", "\(count) Fingers", lang: lang)
+                item.state = config.minimumFingers == count ? .on : .off
+            }
+        }
+        allowMoreFingersItem.title = L10n.t("รองรับนิ้วมากกว่าที่กำหนด (\(config.minimumFingers)+ นิ้ว)", "Allow More Fingers (\(config.minimumFingers)+)", lang: lang)
+        allowMoreFingersItem.state = config.allowMoreFingers ? .on : .off
         settingsMenuItem.title = L10n.t("ตั้งค่า (Settings)...", "Settings...", lang: lang)
         restartMenuItem.title = L10n.t("รีสตาร์ทตัวจับนิ้ว (Restart)", "Restart Listeners", lang: lang)
         launchAtLoginItem.title = L10n.t("เปิดอัตโนมัติเมื่อเปิดเครื่อง", "Launch at Login", lang: lang)
@@ -216,6 +242,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func toggleTapToClick() {
         config.tapToClick.toggle()
+    }
+
+    @objc private func selectFingerCount(_ sender: NSMenuItem) {
+        config.minimumFingers = max(2, min(10, sender.tag))
+    }
+
+    @objc private func toggleAllowMoreFingers() {
+        config.allowMoreFingers.toggle()
     }
 
     @objc private func toggleIgnoreApp() {

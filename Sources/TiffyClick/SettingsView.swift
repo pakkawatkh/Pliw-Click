@@ -124,12 +124,27 @@ private struct TrackpadSettingsTab: View {
     var body: some View {
         Form {
             Section(L10n.t("แทร็กแพด และ Magic Mouse", "Trackpad & Magic Mouse", lang: lang)) {
-                Stepper(value: $config.minimumFingers, in: 2...5) {
+                Stepper(value: $config.minimumFingers, in: 2...10) {
                     HStack {
                         Text(L10n.t("จำนวนนิ้วสำหรับ Middle Click", "Fingers for Middle Click", lang: lang))
                         Spacer()
                         Text(L10n.t("\(config.minimumFingers) นิ้ว", "\(config.minimumFingers) fingers", lang: lang))
-                            .foregroundColor(.secondary)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.accentColor)
+                    }
+                }
+
+                HStack(spacing: 8) {
+                    Text(L10n.t("เลือกด่วน:", "Quick pick:", lang: lang))
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    ForEach([2, 3, 4, 5], id: \.self) { count in
+                        Button("\(count)") {
+                            config.minimumFingers = count
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(config.minimumFingers == count ? .accentColor : .secondary)
                     }
                 }
 
