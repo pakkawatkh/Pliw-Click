@@ -39,40 +39,21 @@ private struct LiquidGlassBackdrop: NSViewRepresentable {
     }
 }
 
-/// Sculpted Apple-style navigation pointer pointing upward by default (rotated 360° toward cursor).
-private struct SculptedArrowShape: Shape {
+/// Slender, minimalist curved chevron pointing upward (orbits smoothly right along the orb's inner edge).
+private struct SlenderEdgeChevron: Shape {
     func path(in rect: CGRect) -> Path {
         let w = rect.width
         let h = rect.height
         var p = Path()
-
-        // Smooth rounded tip at top center, sweeping wings, and subtle concave tail notch
-        p.move(to: CGPoint(x: w * 0.50, y: h * 0.06))
+        p.move(to: CGPoint(x: w * 0.08, y: h * 0.88))
         p.addQuadCurve(
-            to: CGPoint(x: w * 0.88, y: h * 0.86),
-            control: CGPoint(x: w * 0.72, y: h * 0.44)
+            to: CGPoint(x: w * 0.50, y: h * 0.14),
+            control: CGPoint(x: w * 0.30, y: h * 0.36)
         )
         p.addQuadCurve(
-            to: CGPoint(x: w * 0.76, y: h * 0.92),
-            control: CGPoint(x: w * 0.86, y: h * 0.94)
+            to: CGPoint(x: w * 0.92, y: h * 0.88),
+            control: CGPoint(x: w * 0.70, y: h * 0.36)
         )
-        p.addQuadCurve(
-            to: CGPoint(x: w * 0.50, y: h * 0.72),
-            control: CGPoint(x: w * 0.62, y: h * 0.78)
-        )
-        p.addQuadCurve(
-            to: CGPoint(x: w * 0.24, y: h * 0.92),
-            control: CGPoint(x: w * 0.38, y: h * 0.78)
-        )
-        p.addQuadCurve(
-            to: CGPoint(x: w * 0.12, y: h * 0.86),
-            control: CGPoint(x: w * 0.14, y: h * 0.94)
-        )
-        p.addQuadCurve(
-            to: CGPoint(x: w * 0.50, y: h * 0.06),
-            control: CGPoint(x: w * 0.28, y: h * 0.44)
-        )
-        p.closeSubpath()
         return p
     }
 }
@@ -87,10 +68,14 @@ private struct AutoscrollBadgeView: View {
         model.activeAngle != nil
     }
 
-    private var arrowOffset: CGSize {
+    private var edgeArrowOffset: CGSize {
         guard let angle = model.activeAngle else { return .zero }
-        let shift: CGFloat = 2.0
-        return CGSize(width: CGFloat(cos(angle)) * shift, height: CGFloat(sin(angle)) * shift)
+        // Hugs right along the inner rim of the 28pt (radius 14pt) glass orb
+        let orbitRadius: CGFloat = 9.6
+        return CGSize(
+            width: CGFloat(cos(angle)) * orbitRadius,
+            height: CGFloat(sin(angle)) * orbitRadius
+        )
     }
 
     var body: some View {
@@ -158,10 +143,10 @@ private struct AutoscrollBadgeView: View {
                 .stroke(Color.black.opacity(colorScheme == .dark ? 0.45 : 0.14), lineWidth: 0.5)
                 .frame(width: orbSize + 0.5, height: orbSize + 0.5)
 
-            // 7. Sculpted single 360° pointer arrow (no center dot!)
+            // 7. Slender rim-hugging chevron orbiting 360° along the inner edge
             if let angle = model.activeAngle {
-                SculptedArrowShape()
-                    .fill(
+                SlenderEdgeChevron()
+                    .stroke(
                         LinearGradient(
                             colors: [
                                 Color(red: 0.22, green: 0.74, blue: 0.98),
@@ -169,24 +154,21 @@ private struct AutoscrollBadgeView: View {
                             ],
                             startPoint: .top,
                             endPoint: .bottom
-                        )
+                        ),
+                        style: StrokeStyle(lineWidth: 1.45, lineCap: .round, lineJoin: .round)
                     )
-                    .overlay(
-                        SculptedArrowShape()
-                            .stroke(Color.white.opacity(0.55), lineWidth: 0.5)
-                    )
-                    .frame(width: 11.5, height: 11.5)
-                    .shadow(color: Color.accentColor.opacity(0.45), radius: 3, x: 0, y: 1)
+                    .frame(width: 8.2, height: 4.4)
+                    .shadow(color: Color.accentColor.opacity(0.45), radius: 2)
                     .rotationEffect(.radians(angle + .pi / 2))
-                    .offset(arrowOffset)
-                    .transition(.opacity.combined(with: .scale(scale: 0.55)))
+                    .offset(edgeArrowOffset)
+                    .transition(.opacity.combined(with: .scale(scale: 0.65)))
             }
         }
         .frame(width: 54, height: 54)
         .scaleEffect(model.isVisible ? 1.0 : 0.75)
         .opacity(model.isVisible ? 1.0 : 0.0)
         .animation(.spring(response: 0.18, dampingFraction: 0.76), value: model.isVisible)
-        .animation(.easeOut(duration: 0.12), value: isScrolling)
+        .animation(.easeOut(duration: 0.10), value: isScrolling)
     }
 }
 
