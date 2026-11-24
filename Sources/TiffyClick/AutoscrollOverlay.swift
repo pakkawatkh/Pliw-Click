@@ -4,8 +4,8 @@ import TiffyClickCore
 
 @MainActor
 final class AutoscrollOverlayModel: ObservableObject {
-    @Published var direction: AutoscrollDirection = .none
-    @Published var horizontalEnabled: Bool = true
+    /// Continuous angle in radians (`atan2(dy, dx)`) pointing toward cursor, or `nil` when idle in deadzone.
+    @Published var activeAngle: Double? = nil
     @Published var isVisible: Bool = false
 }
 
@@ -46,14 +46,19 @@ private struct AutoscrollBadgeView: View {
     private let orbSize: CGFloat = 28
 
     private var isScrolling: Bool {
-        model.direction != .none
+        model.activeAngle != nil
     }
 
     private var dotOffset: CGSize {
+        guard let angle = model.activeAngle else { return .zero }
         let shift: CGFloat = 1.6
-        let dx: CGFloat = (model.direction.right ? shift : 0) - (model.direction.left ? shift : 0)
-        let dy: CGFloat = (model.direction.down ? shift : 0) - (model.direction.up ? shift : 0)
-        return CGSize(width: dx, height: dy)
+        return CGSize(width: CGFloat(cos(angle)) * shift, height: CGFloat(sin(angle)) * shift)
+    }
+
+    private var arrowOffset: CGSize {
+        guard let angle = model.activeAngle else { return .zero }
+        let radius: CGFloat = 8.8
+        return CGSize(width: CGFloat(cos(angle)) * radius, height: CGFloat(sin(angle)) * radius)
     }
 
     private var activeGlowColor: Color {
@@ -136,53 +141,22 @@ private struct AutoscrollBadgeView: View {
                 .shadow(color: isScrolling ? activeGlowColor.opacity(0.6) : .clear, radius: 3)
                 .offset(dotOffset)
 
-            // 8. Directional chevron — shown ONLY in the active scrolling direction
-            directionChevron(
-                symbol: "chevron.up",
-                active: model.direction.up,
-                activeOffset: CGSize(width: 0, height: -8.8),
-                idleOffset: CGSize(width: 0, height: -5.5)
-            )
-
-            directionChevron(
-                symbol: "chevron.down",
-                active: model.direction.down,
-                activeOffset: CGSize(width: 0, height: 8.8),
-                idleOffset: CGSize(width: 0, height: 5.5)
-            )
-
-            if model.horizontalEnabled {
-                directionChevron(
-                    symbol: "chevron.left",
-                    active: model.direction.left,
-                    activeOffset: CGSize(width: -8.8, height: 0),
-                    idleOffset: CGSize(width: -5.5, height: 0)
-                )
-
-                directionChevron(
-                    symbol: "chevron.right",
-                    active: model.direction.right,
-                    activeOffset: CGSize(width: 8.8, height: 0),
-                    idleOffset: CGSize(width: 5.5, height: 0)
-                )
+            // 8. Single 360° orbiting chevron pointing directly toward the cursor
+            if let angle = model.activeAngle {
+                Image(systemName: "chevron.up")
+                    .font(.system(size: 6.8, weight: .bold))
+                    .foregroundColor(activeGlowColor)
+                    .shadow(color: activeGlowColor.opacity(0.55), radius: 2.5)
+                    .rotationEffect(.radians(angle + .pi / 2))
+                    .offset(arrowOffset)
+                    .transition(.opacity.combined(with: .scale(scale: 0.6)))
             }
         }
         .frame(width: 54, height: 54)
         .scaleEffect(model.isVisible ? 1.0 : 0.75)
         .opacity(model.isVisible ? 1.0 : 0.0)
         .animation(.spring(response: 0.18, dampingFraction: 0.76), value: model.isVisible)
-        .animation(.easeOut(duration: 0.12), value: model.direction)
-    }
-
-    @ViewBuilder
-    private func directionChevron(symbol: String, active: Bool, activeOffset: CGSize, idleOffset: CGSize) -> some View {
-        Image(systemName: symbol)
-            .font(.system(size: 6.5, weight: .bold))
-            .foregroundColor(activeGlowColor)
-            .shadow(color: activeGlowColor.opacity(0.5), radius: 2.5)
-            .scaleEffect(active ? 1.0 : 0.5)
-            .opacity(active ? 1.0 : 0.0)
-            .offset(active ? activeOffset : idleOffset)
+        .animation(.easeOut(duration: 0.10), value: isScrolling)
     }
 }
 
@@ -192,8 +166,7 @@ final class AutoscrollOverlayController {
     private var panel: NSPanel?
 
     func show(at cgPoint: CGPoint, horizontalEnabled: Bool) {
-        model.direction = .none
-        model.horizontalEnabled = horizontalEnabled
+        model.activeAngle = nil
         model.isVisible = false
 
         let panel = ensurePanel()
@@ -210,15 +183,13 @@ final class AutoscrollOverlayController {
         }
     }
 
-    func update(direction: AutoscrollDirection) {
-        if model.direction != direction {
-            model.direction = direction
-        }
+    func update(angle: Double?) {
+        model.activeAngle = angle
     }
 
     func hide() {
         model.isVisible = false
-        model.direction = .none
+        model.activeAngle = nil
         panel?.orderOut(nil)
     }
 

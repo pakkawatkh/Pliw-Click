@@ -24,8 +24,10 @@ public struct AutoscrollStep: Equatable, Sendable {
     public let wheelX: Int32
     /// Active directional arrows to highlight in the HUD overlay.
     public let direction: AutoscrollDirection
+    /// Continuous angle in radians (`atan2(dy, dx)` in screen coordinates) when scrolling, or `nil` when idle.
+    public let angleRadians: Double?
 
-    public static let zero = AutoscrollStep(wheelY: 0, wheelX: 0, direction: .none)
+    public static let zero = AutoscrollStep(wheelY: 0, wheelX: 0, direction: .none, angleRadians: nil)
 }
 
 public enum AutoscrollMath {
@@ -66,7 +68,21 @@ public enum AutoscrollMath {
             right: horizontalEnabled && dx > deadzone
         )
 
-        return AutoscrollStep(wheelY: wheelY, wheelX: wheelX, direction: direction)
+        let angleRadians: Double?
+        if horizontalEnabled {
+            let dist = (dx * dx + dy * dy).squareRoot()
+            angleRadians = dist > deadzone ? atan2(dy, dx) : nil
+        } else {
+            if dy < -deadzone {
+                angleRadians = -.pi / 2
+            } else if dy > deadzone {
+                angleRadians = .pi / 2
+            } else {
+                angleRadians = nil
+            }
+        }
+
+        return AutoscrollStep(wheelY: wheelY, wheelX: wheelX, direction: direction, angleRadians: angleRadians)
     }
 
     /// Smooth nonlinear curve: gentle precision near deadzone, fast cruising further away.

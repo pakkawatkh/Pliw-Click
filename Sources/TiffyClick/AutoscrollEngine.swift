@@ -223,7 +223,7 @@ final class AutoscrollEngine {
         )
 
         DispatchQueue.main.async { [weak self] in
-            self?.overlay.update(direction: step.direction)
+            self?.overlay.update(angle: step.angleRadians)
         }
 
         if step.wheelY != 0 || step.wheelX != 0 {

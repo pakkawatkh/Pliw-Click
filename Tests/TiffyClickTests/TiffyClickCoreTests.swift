@@ -22,6 +22,24 @@ final class TiffyClickCoreTests: XCTestCase {
         XCTAssertEqual(step.wheelX, 0)
         XCTAssertEqual(step.wheelY, 0)
         XCTAssertEqual(step.direction, .none)
+        XCTAssertNil(step.angleRadians)
+    }
+
+    func testAutoscrollDiagonalProducesSingleContinuousAngle() {
+        let anchor = CGPoint(x: 500, y: 500)
+        let cursor = CGPoint(x: 550, y: 550) // 45 deg down-right -> pi/4
+
+        let step = AutoscrollMath.computeStep(
+            anchor: anchor,
+            current: cursor,
+            deadzone: 14,
+            speedMultiplier: 1.0,
+            horizontalEnabled: true,
+            invertDirection: false
+        )
+
+        XCTAssertNotNil(step.angleRadians)
+        XCTAssertEqual(step.angleRadians!, .pi / 4, accuracy: 0.001)
     }
 
     func testAutoscrollDownProducesNegativeWheelYAndDownDirection() {
