@@ -31,7 +31,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var langThItem: NSMenuItem!
     private var langEnItem: NSMenuItem!
     private var updateMenuItem: NSMenuItem!
-    private var versionMenuItem: NSMenuItem!
     private var quitMenuItem: NSMenuItem!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -141,14 +140,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         langEnItem.target = self
         languageMenuItem.submenu = langSubmenu
 
-        updateMenuItem = menu.addItem(withTitle: "", action: #selector(checkUpdates), keyEquivalent: "")
-        updateMenuItem.target = self
-        updateMenuItem.image = symbol("arrow.down.circle")
-
         menu.addItem(.separator())
 
-        versionMenuItem = menu.addItem(withTitle: "tiffy-click \(updater.currentVersion)", action: nil, keyEquivalent: "")
-        versionMenuItem.isEnabled = false
+        updateMenuItem = menu.addItem(withTitle: "", action: #selector(checkUpdates), keyEquivalent: "")
+        updateMenuItem.target = self
 
         quitMenuItem = menu.addItem(withTitle: "", action: #selector(quitApp), keyEquivalent: "q")
         quitMenuItem.target = self
@@ -194,7 +189,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         settingsMenuItem.title = L10n.t("การตั้งค่า…", "Settings…", lang: lang)
         restartMenuItem.title = L10n.t("รีสตาร์ทตัวจับนิ้ว", "Restart Listeners", lang: lang)
         languageMenuItem.title = L10n.t("ภาษา", "Language", lang: lang)
-        updateMenuItem.title = L10n.t("ตรวจหาอัปเดต…", "Check for Updates…", lang: lang)
+        updateMenuItem.title = L10n.t(
+            "v\(updater.currentVersion) · ตรวจหาอัปเดต…",
+            "v\(updater.currentVersion) · Check for Updates…",
+            lang: lang
+        )
         quitMenuItem.title = L10n.t("ออกจาก tiffy-click", "Quit tiffy-click", lang: lang)
 
         langThItem.state = lang == .th ? .on : .off
