@@ -4,39 +4,25 @@ import SwiftUI
 import PliwClickCore
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     private let config = PliwClickConfig.shared
     private let accessibilityMonitor = AccessibilityMonitor()
     private let overlayController = AutoscrollOverlayController()
     private let updater = UpdateChecker.shared
+    private let popoverViewModel = StatusPopoverViewModel()
 
     private var statusItem: NSStatusItem!
+    private var popover: NSPopover!
     private var settingsWindow: NSWindow?
 
-    private var permissionStatusItem: NSMenuItem!
-    private var permissionActionItem: NSMenuItem!
-    private var permissionSeparator: NSMenuItem!
-    private var enabledItem: NSMenuItem!
-    private var autoscrollToggleItem: NSMenuItem!
-    private var tapToClickItem: NSMenuItem!
-    private var fingersMenuItem: NSMenuItem!
-    private var fingerOptionItems: [Int: NSMenuItem] = [:]
-    private var allowMoreFingersItem: NSMenuItem!
-    private var currentAppMenuItem: NSMenuItem!
-    private var ignoreAutoscrollItem: NSMenuItem!
-    private var ignoreAppItem: NSMenuItem!
-    private var settingsMenuItem: NSMenuItem!
-    private var restartMenuItem: NSMenuItem!
-    private var languageMenuItem: NSMenuItem!
-    private var langThItem: NSMenuItem!
-    private var langEnItem: NSMenuItem!
-    private var updateMenuItem: NSMenuItem!
-    private var quitMenuItem: NSMenuItem!
+    private var globalEventMonitor: Any?
+    private var localEventMonitor: Any?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
 
         setupStatusItem()
+        setupPopover()
 
         InputController.shared.configure(overlay: overlayController)
         InputController.shared.start(accessibilityMonitor: accessibilityMonitor)
@@ -66,214 +52,156 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             image?.isTemplate = true
             button.image = image
             button.toolTip = "Pliw Click"
+            button.target = self
+            button.action = #selector(togglePopover(_:))
+            button.sendAction(on: [.leftMouseDown, .rightMouseDown])
         }
-
-        let menu = NSMenu()
-        menu.delegate = self
-
-        // Accessibility warning banner (hidden once granted)
-        permissionStatusItem = menu.addItem(withTitle: "", action: nil, keyEquivalent: "")
-        permissionStatusItem.image = symbol("exclamationmark.triangle")
-        permissionActionItem = menu.addItem(withTitle: "", action: #selector(openAccessibility), keyEquivalent: "")
-        permissionActionItem.target = self
-        permissionActionItem.image = symbol("lock.shield")
-        permissionSeparator = NSMenuItem.separator()
-        menu.addItem(permissionSeparator)
-
-        // Section 1: Core toggles (checkmark-only section for crisp alignment)
-        enabledItem = menu.addItem(withTitle: "", action: #selector(toggleEnabled), keyEquivalent: "")
-        enabledItem.target = self
-
-        autoscrollToggleItem = menu.addItem(withTitle: "", action: #selector(toggleAutoscroll), keyEquivalent: "")
-        autoscrollToggleItem.target = self
-
-        tapToClickItem = menu.addItem(withTitle: "", action: #selector(toggleTapToClick), keyEquivalent: "")
-        tapToClickItem.target = self
-
-        menu.addItem(.separator())
-
-        // Section 2: Submenus (all items have SF Symbol icons for uniform alignment)
-        fingersMenuItem = menu.addItem(withTitle: "", action: nil, keyEquivalent: "")
-        fingersMenuItem.image = symbol("hand.tap")
-        let fingersSubmenu = NSMenu()
-        for count in 2...10 {
-            let item = fingersSubmenu.addItem(withTitle: "\(count)", action: #selector(selectFingerCount(_:)), keyEquivalent: "")
-            item.tag = count
-            item.target = self
-            fingerOptionItems[count] = item
-        }
-        fingersSubmenu.addItem(.separator())
-        allowMoreFingersItem = fingersSubmenu.addItem(withTitle: "", action: #selector(toggleAllowMoreFingers), keyEquivalent: "")
-        allowMoreFingersItem.target = self
-        fingersMenuItem.submenu = fingersSubmenu
-
-        currentAppMenuItem = menu.addItem(withTitle: "", action: nil, keyEquivalent: "")
-        currentAppMenuItem.image = symbol("macwindow")
-        let currentAppSubmenu = NSMenu()
-        currentAppSubmenu.autoenablesItems = false
-        ignoreAutoscrollItem = currentAppSubmenu.addItem(withTitle: "", action: #selector(toggleIgnoreAutoscroll), keyEquivalent: "")
-        ignoreAutoscrollItem.target = self
-        ignoreAppItem = currentAppSubmenu.addItem(withTitle: "", action: #selector(toggleIgnoreApp), keyEquivalent: "")
-        ignoreAppItem.target = self
-        currentAppMenuItem.submenu = currentAppSubmenu
-
-        menu.addItem(.separator())
-
-        // App controls
-        settingsMenuItem = menu.addItem(withTitle: "", action: #selector(openSettings), keyEquivalent: ",")
-        settingsMenuItem.target = self
-        settingsMenuItem.image = symbol("gearshape")
-
-        // Option-key alternate for power users (keeps menu minimal!)
-        restartMenuItem = menu.addItem(withTitle: "", action: #selector(restartListeners), keyEquivalent: ",")
-        restartMenuItem.keyEquivalentModifierMask = [.command, .option]
-        restartMenuItem.isAlternate = true
-        restartMenuItem.target = self
-        restartMenuItem.image = symbol("arrow.clockwise")
-
-        languageMenuItem = menu.addItem(withTitle: "", action: nil, keyEquivalent: "")
-        languageMenuItem.image = symbol("globe")
-        let langSubmenu = NSMenu()
-        langThItem = langSubmenu.addItem(withTitle: "ไทย", action: #selector(selectThai), keyEquivalent: "")
-        langThItem.target = self
-        langEnItem = langSubmenu.addItem(withTitle: "English", action: #selector(selectEnglish), keyEquivalent: "")
-        langEnItem.target = self
-        languageMenuItem.submenu = langSubmenu
-
-        menu.addItem(.separator())
-
-        updateMenuItem = menu.addItem(withTitle: "", action: #selector(checkUpdates), keyEquivalent: "")
-        updateMenuItem.target = self
-
-        quitMenuItem = menu.addItem(withTitle: "", action: #selector(quitApp), keyEquivalent: "q")
-        quitMenuItem.target = self
-
-        statusItem.menu = menu
-        refreshLocalizedMenuTitles()
     }
 
-    private func symbol(_ name: String) -> NSImage? {
-        let img = NSImage(systemSymbolName: name, accessibilityDescription: nil)
-        img?.isTemplate = true
-        return img
-    }
-
-    private func refreshLocalizedMenuTitles() {
-        let lang = config.language
-        permissionStatusItem.title = L10n.t("ต้องการสิทธิ์การช่วยการเข้าถึง", "Accessibility Required", lang: lang)
-        permissionActionItem.title = L10n.t("เปิดการตั้งค่าความเป็นส่วนตัว…", "Open Privacy Settings…", lang: lang)
-
-        enabledItem.title = L10n.t("เปิดใช้งาน", "Enabled", lang: lang)
-        autoscrollToggleItem.title = L10n.t("เลื่อนอัตโนมัติ (Autoscroll)", "Autoscroll", lang: lang)
-        tapToClickItem.title = L10n.t("แตะเพื่อคลิกกลาง", "Tap to Click", lang: lang)
-
-        let plus = config.allowMoreFingers ? "+" : ""
-        fingersMenuItem.title = L10n.t(
-            "จำนวนนิ้ว (\(config.minimumFingers)\(plus))",
-            "Fingers (\(config.minimumFingers)\(plus))",
-            lang: lang
+    private func setupPopover() {
+        let rootView = StatusPopoverView(
+            config: config,
+            accessibilityMonitor: accessibilityMonitor,
+            viewModel: popoverViewModel,
+            currentVersion: updater.currentVersion,
+            onOpenAccessibility: { [weak self] in
+                self?.closePopover()
+                self?.openAccessibility()
+            },
+            onRestartListeners: { [weak self] in
+                self?.restartListeners()
+            },
+            onOpenSettings: { [weak self] in
+                self?.closePopover()
+                self?.openSettings()
+            },
+            onCheckUpdates: { [weak self] in
+                self?.closePopover()
+                self?.checkUpdates()
+            },
+            onQuit: { [weak self] in
+                self?.quitApp()
+            }
         )
-        for count in 2...10 {
-            if let item = fingerOptionItems[count] {
-                item.title = L10n.t("\(count) นิ้ว", "\(count) Fingers", lang: lang)
-                item.state = config.minimumFingers == count ? .on : .off
+
+        let hosting = NSHostingController(rootView: rootView)
+        hosting.sizingOptions = [.preferredContentSize]
+
+        let pop = NSPopover()
+        pop.contentViewController = hosting
+        pop.behavior = .applicationDefined
+        pop.animates = true
+        pop.delegate = self
+        self.popover = pop
+    }
+
+    @objc private func togglePopover(_ sender: AnyObject?) {
+        if popover.isShown {
+            closePopover()
+        } else {
+            showPopover()
+        }
+    }
+
+    private func showPopover() {
+        guard let button = statusItem.button else { return }
+        popoverViewModel.refreshFrontmostApp()
+        popoverViewModel.isOptionPressed = NSEvent.modifierFlags.contains(.option)
+        popoverViewModel.expandedSection = nil
+
+        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+        installEventMonitors()
+    }
+
+    private func closePopover() {
+        if popover.isShown {
+            popover.performClose(nil)
+        }
+        removeEventMonitors()
+    }
+
+    func popoverDidClose(_ notification: Notification) {
+        removeEventMonitors()
+    }
+
+    private func installEventMonitors() {
+        removeEventMonitors()
+
+        globalEventMonitor = NSEvent.addGlobalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown, .flagsChanged]
+        ) { [weak self] event in
+            Task { @MainActor [weak self] in
+                guard let self, self.popover.isShown else { return }
+                if event.type == .flagsChanged {
+                    self.popoverViewModel.isOptionPressed = event.modifierFlags.contains(.option)
+                } else {
+                    self.closePopover()
+                }
             }
         }
-        allowMoreFingersItem.title = L10n.t(
-            "รองรับ \(config.minimumFingers) นิ้วขึ้นไป",
-            "Allow \(config.minimumFingers)+ Fingers",
-            lang: lang
-        )
-        allowMoreFingersItem.state = config.allowMoreFingers ? .on : .off
 
-        settingsMenuItem.title = L10n.t("การตั้งค่า…", "Settings…", lang: lang)
-        restartMenuItem.title = L10n.t("รีสตาร์ทตัวจับนิ้ว", "Restart Listeners", lang: lang)
-        languageMenuItem.title = L10n.t("ภาษา", "Language", lang: lang)
-        updateMenuItem.title = L10n.t(
-            "v\(updater.currentVersion) · ตรวจหาอัปเดต…",
-            "v\(updater.currentVersion) · Check for Updates…",
-            lang: lang
-        )
-        quitMenuItem.title = L10n.t("ออกจาก Pliw Click", "Quit Pliw Click", lang: lang)
+        localEventMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown, .keyDown, .flagsChanged]
+        ) { [weak self] event in
+            guard let self, self.popover.isShown else { return event }
 
-        langThItem.state = lang == .th ? .on : .off
-        langEnItem.state = lang == .en ? .on : .off
+            switch event.type {
+            case .flagsChanged:
+                self.popoverViewModel.isOptionPressed = event.modifierFlags.contains(.option)
+                return event
+
+            case .keyDown:
+                if event.keyCode == 53 { // Escape
+                    self.closePopover()
+                    return nil
+                }
+                let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+                if flags == .command {
+                    if event.charactersIgnoringModifiers == "," {
+                        self.closePopover()
+                        self.openSettings()
+                        return nil
+                    }
+                    if event.charactersIgnoringModifiers?.lowercased() == "q" {
+                        self.quitApp()
+                        return nil
+                    }
+                }
+                return event
+
+            case .leftMouseDown, .rightMouseDown, .otherMouseDown:
+                let popoverWindow = self.popover.contentViewController?.view.window
+                let statusWindow = self.statusItem.button?.window
+                if event.window !== popoverWindow && event.window !== statusWindow {
+                    self.closePopover()
+                }
+                return event
+
+            default:
+                return event
+            }
+        }
+    }
+
+    private func removeEventMonitors() {
+        if let monitor = globalEventMonitor {
+            NSEvent.removeMonitor(monitor)
+            globalEventMonitor = nil
+        }
+        if let monitor = localEventMonitor {
+            NSEvent.removeMonitor(monitor)
+            localEventMonitor = nil
+        }
     }
 
     private func updatePermissionUI(trusted: Bool) {
         statusItem.button?.appearsDisabled = !trusted
-        permissionStatusItem.isHidden = trusted
-        permissionActionItem.isHidden = trusted
-        permissionSeparator.isHidden = trusted
-    }
-
-    func menuWillOpen(_ menu: NSMenu) {
-        refreshLocalizedMenuTitles()
-
-        enabledItem.state = config.isEnabled ? .on : .off
-        autoscrollToggleItem.state = config.autoscrollEnabled ? .on : .off
-        tapToClickItem.state = config.tapToClick ? .on : .off
-
-        let lang = config.language
-        if let app = AppInspector.frontmostApp(), let name = app.localizedName, let bundleID = app.bundleIdentifier {
-            let isBrowser = BrowserRegistry.isBrowser(bundleID: bundleID)
-            currentAppMenuItem.title = name
-            currentAppMenuItem.isHidden = false
-
-            ignoreAutoscrollItem.title = L10n.t("ปิด Autoscroll ในแอปนี้", "Pause Autoscroll", lang: lang)
-            ignoreAutoscrollItem.isEnabled = isBrowser
-            ignoreAutoscrollItem.state = isBrowser && config.autoscrollIgnoredBundles.contains(bundleID) ? .on : .off
-
-            ignoreAppItem.title = L10n.t("ยกเว้นแอปนี้ทั้งหมด", "Ignore App", lang: lang)
-            ignoreAppItem.isEnabled = true
-            ignoreAppItem.state = config.ignoredAppBundles.contains(bundleID) ? .on : .off
-        } else {
-            currentAppMenuItem.isHidden = true
-        }
     }
 
     // MARK: - Actions
 
     @objc private func openAccessibility() {
         SystemPermissions.openAccessibilitySettings()
-    }
-
-    @objc private func toggleEnabled() {
-        config.isEnabled.toggle()
-    }
-
-    @objc private func toggleAutoscroll() {
-        config.autoscrollEnabled.toggle()
-    }
-
-    @objc private func selectThai() {
-        config.language = .th
-    }
-
-    @objc private func selectEnglish() {
-        config.language = .en
-    }
-
-    @objc private func toggleTapToClick() {
-        config.tapToClick.toggle()
-    }
-
-    @objc private func selectFingerCount(_ sender: NSMenuItem) {
-        config.minimumFingers = max(2, min(10, sender.tag))
-    }
-
-    @objc private func toggleAllowMoreFingers() {
-        config.allowMoreFingers.toggle()
-    }
-
-    @objc private func toggleIgnoreApp() {
-        guard let bundleID = AppInspector.frontmostBundleID() else { return }
-        config.toggleIgnoredApp(bundleID)
-    }
-
-    @objc private func toggleIgnoreAutoscroll() {
-        guard let bundleID = AppInspector.frontmostBundleID() else { return }
-        config.toggleAutoscrollIgnoredApp(bundleID)
     }
 
     @objc private func restartListeners() {
