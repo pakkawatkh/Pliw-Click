@@ -10,7 +10,7 @@ echo "🔨 Ensuring latest release build of Pliw Click.app..."
 ./scripts/build_app.sh
 
 if [ -d "$(cd "${PROJECT_DIR}/.." && pwd)/public" ]; then
-    PLIW_PORTAL_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/public/pliw-click"
+    PLIW_PORTAL_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/public/public/pliw-click"
 else
     PLIW_PORTAL_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/Pliw-App/pliw-click"
 fi
