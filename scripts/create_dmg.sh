@@ -52,8 +52,8 @@ echo "🗜️ Creating ZIP archive for in-app updates: ${ZIP_OUTPUT}..."
 rm -f "${ZIP_OUTPUT}"
 ditto -c -k --keepParent "${PROJECT_DIR}/Pliw Click.app" "${ZIP_OUTPUT}"
 
-if [ -f "$(cd "${PROJECT_DIR}/../.." && pwd)/index.html" ]; then
-    PLIW_PORTAL_DIR="$(cd "${PROJECT_DIR}/../.." && pwd)/pliw-click"
+if [ -d "$(cd "${PROJECT_DIR}/.." && pwd)/pliw-public" ]; then
+    PLIW_PORTAL_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/pliw-public/pliw-click"
 else
     PLIW_PORTAL_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/Pliw-App/pliw-click"
 fi
