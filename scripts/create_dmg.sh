@@ -9,11 +9,19 @@ cd "${PROJECT_DIR}"
 echo "🔨 Ensuring latest release build of Pliw Click.app..."
 ./scripts/build_app.sh
 
-DMG_TMP="${PROJECT_DIR}/.build_dmg"
-DMG_OUTPUT="${PROJECT_DIR}/pliw-click-Installer.dmg"
+if [ -d "$(cd "${PROJECT_DIR}/.." && pwd)/public" ]; then
+    PLIW_PORTAL_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/public/pliw-click"
+else
+    PLIW_PORTAL_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/Pliw-App/pliw-click"
+fi
+mkdir -p "${PLIW_PORTAL_DIR}"
+
+DMG_TMP="$(mktemp -d)"
+trap 'rm -rf "${DMG_TMP}"' EXIT
+DMG_OUTPUT="${PLIW_PORTAL_DIR}/pliw-click-Installer.dmg"
+ZIP_OUTPUT="${PLIW_PORTAL_DIR}/pliw-click.zip"
 
 echo "📦 Preparing DMG installer directory structure..."
-rm -rf "${DMG_TMP}"
 mkdir -p "${DMG_TMP}"
 
 cp -R "${PROJECT_DIR}/Pliw Click.app" "${DMG_TMP}/Pliw Click.app"
@@ -43,24 +51,15 @@ cat << 'EOF' > "${DMG_TMP}/How to Install.txt"
 EOF
 
 echo "📀 Creating DMG disk image: ${DMG_OUTPUT}..."
-rm -f "${DMG_OUTPUT}"
+rm -f "${DMG_OUTPUT}" "${PROJECT_DIR}/pliw-click-Installer.dmg"
 hdiutil create -volname "Pliw Click Installer" -srcfolder "${DMG_TMP}" -ov -format UDZO "${DMG_OUTPUT}"
-rm -rf "${DMG_TMP}"
 
-ZIP_OUTPUT="${PROJECT_DIR}/pliw-click.zip"
 echo "🗜️ Creating ZIP archive for in-app updates: ${ZIP_OUTPUT}..."
-rm -f "${ZIP_OUTPUT}"
+rm -f "${ZIP_OUTPUT}" "${PROJECT_DIR}/pliw-click.zip"
 ditto -c -k --keepParent "${PROJECT_DIR}/Pliw Click.app" "${ZIP_OUTPUT}"
 
-if [ -d "$(cd "${PROJECT_DIR}/.." && pwd)/public" ]; then
-    PLIW_PORTAL_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/public/pliw-click"
-else
-    PLIW_PORTAL_DIR="$(cd "${PROJECT_DIR}/.." && pwd)/Pliw-App/pliw-click"
-fi
-mkdir -p "${PLIW_PORTAL_DIR}"
-echo "📦 Syncing DMG and ZIP to ${PLIW_PORTAL_DIR}..."
-cp -f "${DMG_OUTPUT}" "${PLIW_PORTAL_DIR}/pliw-click-Installer.dmg"
-cp -f "${ZIP_OUTPUT}" "${PLIW_PORTAL_DIR}/pliw-click.zip"
+# Remove temporary local .app bundle so build outputs stay only in public/
+rm -rf "${PROJECT_DIR}/Pliw Click.app"
 
-echo "🎉 DMG and ZIP packages successfully created!"
+echo "🎉 DMG and ZIP packages successfully created in ${PLIW_PORTAL_DIR}!"
 ls -lh "${DMG_OUTPUT}" "${ZIP_OUTPUT}"
