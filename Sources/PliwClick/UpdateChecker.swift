@@ -258,7 +258,7 @@ final class UpdateChecker: ObservableObject {
     @Published var statusMessage: String = ""
     @Published var availableRelease: ReleaseMetadata?
 
-    static let versionURL = URL(string: "https://pakkawatkh.github.io/Pliw-App/pliw-click/version.json")!
+    static let versionURL = URL(string: "https://pakkawatkh.github.io/public/pliw-click/version.json")!
 
     private let toast = UpdateToastController()
 
@@ -303,8 +303,8 @@ final class UpdateChecker: ObservableObject {
                     toast.show(
                         state: .updateAvailable(meta: meta, currentVersion: currentVersion),
                         autoHideAfter: 12.0,
-                        onUpdate: { [weak self] in
-                            self?.performUpdate(meta)
+                        onUpdate: {
+                            self.performUpdate(meta)
                         }
                     )
                 } else {
@@ -365,6 +365,13 @@ final class UpdateChecker: ObservableObject {
                     toast.hide()
                     return
                 }
+
+                // Strip macOS quarantine attributes so Gatekeeper does not block relaunch
+                let xattr = Process()
+                xattr.executableURL = URL(fileURLWithPath: "/usr/bin/xattr")
+                xattr.arguments = ["-dr", "com.apple.quarantine", extractedApp.path]
+                try? xattr.run()
+                xattr.waitUntilExit()
 
                 let targetApp = URL(fileURLWithPath: "/Applications/Pliw Click.app")
                 let legacyApp = URL(fileURLWithPath: "/Applications/pliw-click.app")

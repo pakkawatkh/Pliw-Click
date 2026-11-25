@@ -2,7 +2,7 @@
 
 **Middle-Click, Middle-Drag & macOS Liquid Glass Browser Autoscroll**
 
-[![Version](https://img.shields.io/badge/Release-v1.3.3-06b6d4?style=for-the-badge)](https://pakkawatkh.github.io/public/pliw-click/)
+[![Version](https://img.shields.io/badge/Release-v1.3.4-06b6d4?style=for-the-badge)](https://pakkawatkh.github.io/public/pliw-click/)
 [![Platform](https://img.shields.io/badge/Platform-macOS%2013%2B-lightgrey?style=for-the-badge&logo=apple)](https://github.com/pakkawatkh/Pliw-Click)
 [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 
