@@ -61,25 +61,27 @@ cat << 'EOF' > "${CONTENTS_DIR}/Info.plist"
 </plist>
 EOF
 
-echo "🔏 Code signing Pliw Click.app with stable certificate..."
-SIGN_CERT="MonkeyToolsDeveloper"
+echo "🔏 Code signing Pliw Click.app with stable PliwDeveloper certificate..."
+SIGN_CERT="PliwDeveloper"
 if ! security find-certificate -c "${SIGN_CERT}" ~/Library/Keychains/login.keychain-db >/dev/null 2>&1; then
-    if security find-certificate -c "MonkeyCopyDeveloper" ~/Library/Keychains/login.keychain-db >/dev/null 2>&1; then
-        SIGN_CERT="MonkeyCopyDeveloper"
+    echo "Creating persistent local developer certificate '${SIGN_CERT}' for stable macOS TCC permissions..."
+    TMP_CERT_DIR=$(mktemp -d)
+    openssl req -x509 -newkey rsa:2048 -days 3650 \
+      -keyout "${TMP_CERT_DIR}/dev.key" -out "${TMP_CERT_DIR}/dev.crt" -nodes \
+      -subj "/CN=${SIGN_CERT}" \
+      -addext "keyUsage=critical,digitalSignature" \
+      -addext "extendedKeyUsage=codeSigning"
+    if openssl pkcs12 -help 2>&1 | grep -q -- "-legacy"; then
+        openssl pkcs12 -export -legacy \
+          -in "${TMP_CERT_DIR}/dev.crt" -inkey "${TMP_CERT_DIR}/dev.key" \
+          -out "${TMP_CERT_DIR}/dev.p12" -password pass:pliwdev
     else
-        echo "Creating persistent local developer certificate for stable macOS TCC permissions..."
-        TMP_CERT_DIR=$(mktemp -d)
-        openssl req -x509 -newkey rsa:2048 -days 3650 \
-          -keyout "${TMP_CERT_DIR}/dev.key" -out "${TMP_CERT_DIR}/dev.crt" -nodes \
-          -subj "/CN=MonkeyToolsDeveloper" \
-          -addext "keyUsage=critical,digitalSignature" \
-          -addext "extendedKeyUsage=codeSigning"
         openssl pkcs12 -export \
           -in "${TMP_CERT_DIR}/dev.crt" -inkey "${TMP_CERT_DIR}/dev.key" \
-          -out "${TMP_CERT_DIR}/dev.p12" -password pass:monkeytools
-        security import "${TMP_CERT_DIR}/dev.p12" -k ~/Library/Keychains/login.keychain-db -P monkeytools -T /usr/bin/codesign || true
-        rm -rf "${TMP_CERT_DIR}"
+          -out "${TMP_CERT_DIR}/dev.p12" -password pass:pliwdev
     fi
+    security import "${TMP_CERT_DIR}/dev.p12" -k ~/Library/Keychains/login.keychain-db -P pliwdev -T /usr/bin/codesign || true
+    rm -rf "${TMP_CERT_DIR}"
 fi
 
 codesign --force --deep --sign "${SIGN_CERT}" "${APP_DIR}" || codesign --force --deep --sign - "${APP_DIR}"
